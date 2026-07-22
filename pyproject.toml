@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bonsaigrad"
+dynamic = ["version"]
+description = "A small, from-scratch deep learning library built on NumPy, for learning how MLPs and Transformers work"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy>=1.26.4",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "bonsaigrad.__version__" }
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
