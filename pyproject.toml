@@ -16,6 +16,14 @@ dependencies = [
     "numpy>=1.26.4",
 ]
 
+# Optional tooling for the learning notebooks. NOT part of the library:
+# BonsaiGrad itself stays numpy-only. Install with: pip install -e ".[notebooks]"
+[project.optional-dependencies]
+notebooks = [
+    "matplotlib>=3.8",
+    "jupyter>=1.0",
+]
+
 [tool.setuptools.dynamic]
 version = { attr = "bonsaigrad.__version__" }
 
