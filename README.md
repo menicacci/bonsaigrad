@@ -16,8 +16,7 @@ The notebooks visualise what each component does (computation graphs, gradients,
 NumPy-only:
 
 ```bash
-pip install -e ".[notebooks]"   # matplotlib + jupyter, on top of the library
-jupyter notebook notebooks/     # then open, e.g., 01_leaf.ipynb
+pip install -e .[notebooks]
 ```
 
 ## 🗺️ Roadmap
