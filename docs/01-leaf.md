@@ -1,7 +1,6 @@
 # 01 — The `Leaf`
 
 > 🔬 Runnable companion: [`notebooks/01_leaf.ipynb`](../notebooks/01_leaf.ipynb)
-> — builds these graphs and watches the gradients fill in.
 
 ## Why?
 
