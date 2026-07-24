@@ -12,7 +12,7 @@ just *what* the code does but *why* it works.
 
 Build the pieces bottom-up, culminating in a trainable GPT:
 
-- [ ] `Leaf` — the autograd node and reverse-mode backprop
+- [x] `Leaf` — the autograd node and reverse-mode backprop
 - [ ] Tensor ops and broadcasting-aware gradients
 - [ ] Layers (Linear, activations, LayerNorm, …) and the MLP
 - [ ] Losses and optimizers (SGD, Adam)
