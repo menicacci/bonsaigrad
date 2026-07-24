@@ -1,9 +1,5 @@
 # 01 — The `Leaf`
 
-Before everything, we
-need a way to compute **gradients automatically**. The `Leaf` is that
-machinery.
-
 ## Why?
 
 Training a neural network is one idea repeated a few million times:
