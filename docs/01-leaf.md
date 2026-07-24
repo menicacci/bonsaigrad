@@ -1,5 +1,8 @@
 # 01 — The `Leaf`
 
+> 🔬 Runnable companion: [`notebooks/01_leaf.ipynb`](../notebooks/01_leaf.ipynb)
+> — builds these graphs and watches the gradients fill in.
+
 ## Why?
 
 Training a neural network is one idea repeated a few million times:
