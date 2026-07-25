@@ -20,6 +20,8 @@ class Leaf:
         used only for readable ``repr``s and, later, graph visualisation.
     """
 
+    __array_ufunc__ = None
+
     def __init__(self, data: ArrayLike, _children: tuple[Leaf, ...] = (), _op: str = ""):
         self.data: np.ndarray = np.asarray(data, dtype=np.float64)
         self.grad: np.ndarray = np.zeros_like(self.data)

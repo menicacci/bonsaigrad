@@ -35,6 +35,12 @@ class TestLeaf(unittest.TestCase):
         self.assertEqual(float((3.0 + Leaf(2.0)).data), 5.0)
         self.assertEqual(float((3.0 * Leaf(2.0)).data), 6.0)
 
+    def test_reflected_ops_with_numpy_operands(self):
+        # NumPy must defer to __radd__/__rmul__ rather than broadcasting the
+        # Leaf into an object array, which would drop it out of the graph.
+        self.assertIsInstance(np.float64(3.0) + Leaf(2.0), Leaf)
+        self.assertIsInstance(np.array([1.0, 2.0]) * Leaf(3.0), Leaf)
+
     def test_add_seeds_ones(self):
         # ∂(a+b)/∂a = ∂(a+b)/∂b = 1, and the root is seeded with grad 1.
         a, b = Leaf(2.0), Leaf(3.0)
