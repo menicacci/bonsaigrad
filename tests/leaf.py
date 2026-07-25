@@ -3,11 +3,10 @@ import unittest
 import numpy as np
 
 from bonsaigrad import Leaf
+from ._base import assert_grads
 
-from . import assert_grads
 
-
-class TestLeafConstruction(unittest.TestCase):
+class TestLeaf(unittest.TestCase):
     def test_coerces_to_float64_ndarray(self):
         leaf = Leaf(3)
         self.assertIsInstance(leaf.data, np.ndarray)
@@ -21,8 +20,6 @@ class TestLeafConstruction(unittest.TestCase):
     def test_repr(self):
         self.assertEqual(repr(Leaf(2.0)), "Leaf(data=2.0, grad=0.0)")
 
-
-class TestLeafForward(unittest.TestCase):
     def test_add(self):
         self.assertEqual(float((Leaf(2.0) + Leaf(3.0)).data), 5.0)
 
@@ -38,8 +35,6 @@ class TestLeafForward(unittest.TestCase):
         self.assertEqual(float((3.0 + Leaf(2.0)).data), 5.0)
         self.assertEqual(float((3.0 * Leaf(2.0)).data), 6.0)
 
-
-class TestLeafBackward(unittest.TestCase):
     def test_add_seeds_ones(self):
         # ∂(a+b)/∂a = ∂(a+b)/∂b = 1, and the root is seeded with grad 1.
         a, b = Leaf(2.0), Leaf(3.0)
@@ -49,7 +44,7 @@ class TestLeafBackward(unittest.TestCase):
         self.assertEqual(float(a.grad), 1.0)
         self.assertEqual(float(b.grad), 1.0)
 
-    def test_mul(self):
+    def test_mul_gradients(self):
         # ∂(a·b)/∂a = b, ∂(a·b)/∂b = a
         a, b = Leaf(2.0), Leaf(3.0)
         (a * b).bend()
@@ -68,16 +63,12 @@ class TestLeafBackward(unittest.TestCase):
         (a * a).bend()
         self.assertEqual(float(a.grad), 8.0)
 
-
-class TestLeafGradientCheck(unittest.TestCase):
-    """Analytic gradients from `bend` vs. a finite-difference reference."""
-
-    def test_affine(self):
+    def test_grad_check_affine(self):
         assert_grads(self, lambda a, b: a * b + a, [5.0, -2.0])
 
-    def test_compound(self):
+    def test_grad_check_compound(self):
         # (a + b) * (b + c): b fans out into both factors, exercising accumulation.
         assert_grads(self, lambda a, b, c: (a + b) * (b + c), [2.0, -3.0, 4.0])
 
-    def test_deep(self):
+    def test_grad_check_deep(self):
         assert_grads(self, lambda a, b, c, d: (a * b + c) * (a + d), [1.5, -2.0, 0.5, 3.0])
