@@ -9,7 +9,7 @@ def numerical_grad(build: Callable[..., Leaf], xs: List[float], eps: float = 1e-
     """Finite-difference gradient of ``build``'s scalar output w.r.t. each input.
 
     Perturbs one input at a time and runs the forward pass only, giving a
-    reference the analytic ``bend`` gradients can be checked against. Works for
+    reference the analytic ``wire`` gradients can be checked against. Works for
     any op ``Leaf`` supports, since it drives the graph through ``build``.
     """
     grads: List[float] = []
@@ -24,8 +24,8 @@ def numerical_grad(build: Callable[..., Leaf], xs: List[float], eps: float = 1e-
 
 
 def assert_grads(test: TestCase, build: Callable[..., Leaf], xs: List[float], places: int = 5) -> None:
-    """Assert ``bend``'s gradient on every input matches the numerical estimate."""
+    """Assert ``wire``'s gradient on every input matches the numerical estimate."""
     leaves = [Leaf(x) for x in xs]
-    build(*leaves).bend()
+    build(*leaves).wire()
     for leaf, expected in zip(leaves, numerical_grad(build, xs)):
         test.assertAlmostEqual(float(leaf.grad), expected, places=places)

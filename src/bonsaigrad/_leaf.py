@@ -58,7 +58,7 @@ class Leaf:
     __radd__ = __add__
     __rmul__ = __mul__
 
-    def bend(self) -> None:
+    def wire(self) -> None:
         topo: list[Leaf] = []
         visited: set[Leaf] = set()
 

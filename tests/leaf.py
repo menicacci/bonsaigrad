@@ -45,7 +45,7 @@ class TestLeaf(unittest.TestCase):
         # ∂(a+b)/∂a = ∂(a+b)/∂b = 1, and the root is seeded with grad 1.
         a, b = Leaf(2.0), Leaf(3.0)
         out = a + b
-        out.bend()
+        out.wire()
         self.assertEqual(float(out.grad), 1.0)
         self.assertEqual(float(a.grad), 1.0)
         self.assertEqual(float(b.grad), 1.0)
@@ -53,20 +53,20 @@ class TestLeaf(unittest.TestCase):
     def test_mul_gradients(self):
         # ∂(a·b)/∂a = b, ∂(a·b)/∂b = a
         a, b = Leaf(2.0), Leaf(3.0)
-        (a * b).bend()
+        (a * b).wire()
         self.assertEqual(float(a.grad), 3.0)
         self.assertEqual(float(b.grad), 2.0)
 
     def test_reused_node_accumulates(self):
         # a + a: gradient must accumulate both edges, not overwrite → 2.
         a = Leaf(4.0)
-        (a + a).bend()
+        (a + a).wire()
         self.assertEqual(float(a.grad), 2.0)
 
     def test_squared_node_accumulates(self):
         # a * a: ∂(a²)/∂a = 2a → 8 at a=4.
         a = Leaf(4.0)
-        (a * a).bend()
+        (a * a).wire()
         self.assertEqual(float(a.grad), 8.0)
 
     def test_grad_check_affine(self):

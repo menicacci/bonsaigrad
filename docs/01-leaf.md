@@ -80,7 +80,7 @@ does not just compute `15.0`. It quietly grows a little tree:
   one.
 
 This is the bonsai. The forward pass *grows* the tree from roots up to the
-output. The backward pass — `bend` — sends a shaping signal from the top back
+output. The backward pass — `wire` — sends a shaping signal from the top back
 down to every root, telling each one which way it should lean. Each node stores
 its parents in `_prev` and a label in `_op`:
 
@@ -184,13 +184,13 @@ more than once — like `a` in `f = a * b + a`. That `a` influences `f` down two
 different paths: once through the product, once directly. The chain rule says
 its total gradient is the **sum** over every path it takes to the top.
 
-## `bend`: the backward pass
+## `wire`: the backward pass
 
-`bend` is the whole backward pass. It does three things.
+`wire` is the whole backward pass. It does three things.
 
 **1. Put the nodes in order.** A node can only hand gradient to its parents once
 it has received its own. So we must process nodes top-down: the output first,
-roots last. `bend` finds this order with a depth-first walk that lists a node
+roots last. `wire` finds this order with a depth-first walk that lists a node
 only *after* all its parents, then reverses it — a standard topological sort:
 
 ```python
@@ -239,7 +239,7 @@ running anything.
 ∂f/∂b = a     = 3
 ```
 
-Now trace what `bend` does, top to bottom. Seed `f.grad = 1`.
+Now trace what `wire` does, top to bottom. Seed `f.grad = 1`.
 
 - `f = (a*b) + a` is an addition → copies its gradient to both parents:
   `(a*b).grad = 1`, and `a.grad += 1`.
@@ -257,7 +257,7 @@ from bonsaigrad import Leaf
 a = Leaf(3.0)
 b = Leaf(4.0)
 f = a * b + a
-f.bend()
+f.wire()
 
 f.data    # 15.0
 a.grad    # 5.0
