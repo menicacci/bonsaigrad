@@ -42,7 +42,7 @@ class TestLeaf(unittest.TestCase):
         self.assertIsInstance(np.array([1.0, 2.0]) * Leaf(3.0), Leaf)
 
     def test_add_seeds_ones(self):
-        # ∂(a+b)/∂a = ∂(a+b)/∂b = 1, and the root is seeded with grad 1.
+        # ∂(a+b)/∂a = ∂(a+b)/∂b = 1, and the apex is seeded with grad 1.
         a, b = Leaf(2.0), Leaf(3.0)
         out = a + b
         out.wire()

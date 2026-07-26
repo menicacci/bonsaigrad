@@ -24,8 +24,8 @@ def numerical_grad(build: Callable[..., Leaf], xs: List[float], eps: float = 1e-
 
 
 def assert_grads(test: TestCase, build: Callable[..., Leaf], xs: List[float], places: int = 5) -> None:
-    """Assert ``wire``'s gradient on every input matches the numerical estimate."""
-    leaves = [Leaf(x) for x in xs]
-    build(*leaves).wire()
-    for leaf, expected in zip(leaves, numerical_grad(build, xs)):
-        test.assertAlmostEqual(float(leaf.grad), expected, places=places)
+    """Assert ``wire``'s gradient on every root matches the numerical estimate."""
+    roots = [Leaf(x) for x in xs]
+    build(*roots).wire()
+    for root, expected in zip(roots, numerical_grad(build, xs)):
+        test.assertAlmostEqual(float(root.grad), expected, places=places)

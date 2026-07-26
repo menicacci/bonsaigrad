@@ -54,8 +54,8 @@ leaf.grad   # ∂L/∂(this node), filled in by the backward pass
 We never write one giant formula and try to
 differentiate it. Instead, **as an expression is built, it records itself.**
 
-Every operation (`+`, `*`, …) produces a new `Leaf` that remembers the parents
-it came from and which operation made it. So this line:
+Every operation (`+`, `*`, …) produces a new `Leaf` that remembers the stems
+it grew from and which operation made it. So this line:
 
 ```python
 a = Leaf(3.0)
@@ -76,16 +76,16 @@ does not just compute `15.0`. It quietly grows a little tree:
 
 - The **roots** at the bottom are the inputs we created by hand (`a`, `b`).
 - Each **interior node** is an intermediate result (`a*b`, then `f`).
-- The single node at the **top** is the final output — the loss, once we have
+- The single node at the **apex** is the final output — the loss, once we have
   one.
 
 This is the bonsai. The forward pass *grows* the tree from roots up to the
-output. The backward pass — `wire` — sends a shaping signal from the top back
+output. The backward pass — `wire` — sends a shaping signal from the apex back
 down to every root, telling each one which way it should lean. Each node stores
-its parents in `_prev` and a label in `_op`:
+its stems in `_stems` and a label in `_op`:
 
 ```python
-f._prev   # (Leaf(a*b), Leaf(a))
+f._stems  # (Leaf(a*b), Leaf(a))
 f._op     # "+"
 ```
 
@@ -97,11 +97,11 @@ Everything a node needs fits in four fields, set in `__init__`:
 |-------------|------------------------------------------------------------------|
 | `data`      | the value, always a float `np.ndarray`                           |
 | `grad`      | `∂L/∂(this node)`; same shape as `data`; zero until the backward pass |
-| `_prev`     | the parent nodes this one was built from                         |
-| `_backward` | a function that pushes this node's gradient to its parents       |
+| `_stems`    | the nodes this one grew from                                     |
+| `_backward` | a function that pushes this node's gradient down its stems       |
 
 `_backward` is the interesting one. Each node knows how to hand its own gradient
-back to *its* parents — and nothing more. It is a tiny, local rule. The magic is
+back down *its* stems — and nothing more. It is a tiny, local rule. The magic is
 that chaining these local rules together, in the right order, computes the
 gradient of the whole tree. That chaining rule has a name.
 
@@ -134,7 +134,7 @@ For `out = a + b`, nudging `a` up by `ε` moves `out` up by exactly `ε` (same f
 ```
 
 Plug into the chain rule — the gradient arriving at `out` is `out.grad` — and
-each parent receives it **unchanged**:
+each stem receives it **unchanged**:
 
 ```
 ∂L/∂a = out.grad · 1 = out.grad
@@ -148,7 +148,7 @@ self.grad  += out.grad
 other.grad += out.grad
 ```
 
-Addition is a splitter: it copies the incoming gradient to every input.
+Addition is a splitter: it copies the incoming gradient to every stem.
 
 ### Multiplication
 
@@ -159,7 +159,7 @@ versa). The local derivatives are:
 ∂out/∂a = b        ∂out/∂b = a
 ```
 
-So each parent gets the incoming gradient scaled by the **other** parent's
+So each stem gets the incoming gradient scaled by the **other** stem's
 value:
 
 ```
@@ -174,7 +174,7 @@ self.grad  += other.data * out.grad
 other.grad += self.data  * out.grad
 ```
 
-Multiplication is a cross-wire: each input's gradient leans on its partner's
+Multiplication is a cross-wire: each stem's gradient leans on its partner's
 value.
 
 ## Why `+=`, not `=`
@@ -188,26 +188,26 @@ its total gradient is the **sum** over every path it takes to the top.
 
 `wire` is the whole backward pass. It does three things.
 
-**1. Put the nodes in order.** A node can only hand gradient to its parents once
-it has received its own. So we must process nodes top-down: the output first,
+**1. Put the nodes in order.** A node can only hand gradient down its stems once
+it has received its own. So we must process nodes top-down: the apex first,
 roots last. `wire` finds this order with a depth-first walk that lists a node
-only *after* all its parents, then reverses it — a standard topological sort:
+only *after* all its stems, then reverses it — a standard topological sort:
 
 ```python
-topo: list[Leaf] = []
-visited: set[Leaf] = set()
+topo: List[Leaf] = []
+visited: Set[Leaf] = set()
 
 def build(node):
     if node not in visited:
         visited.add(node)
-        for parent in node._prev:
-            build(parent)
+        for stem in node._stems:
+            build(stem)
         topo.append(node)
 
 build(self)
 ```
 
-**2. Seed the top.** The gradient of the output with respect to itself is,
+**2. Seed the apex.** The gradient of the output with respect to itself is,
 trivially, `1` (`∂L/∂L = 1`). That is the spark that starts the relay:
 
 ```python
@@ -216,7 +216,7 @@ self.grad = np.ones_like(self.data)
 
 **3. Let each node hand off its gradient.** Walk the order in reverse (top to
 bottom) and fire each node's local `_backward`. By the time we reach a node, its
-`grad` is already complete, so its handoff to its parents is correct:
+`grad` is already complete, so its handoff down its stems is correct:
 
 ```python
 for n in reversed(topo):
@@ -241,9 +241,9 @@ running anything.
 
 Now trace what `wire` does, top to bottom. Seed `f.grad = 1`.
 
-- `f = (a*b) + a` is an addition → copies its gradient to both parents:
+- `f = (a*b) + a` is an addition → copies its gradient to both stems:
   `(a*b).grad = 1`, and `a.grad += 1`.
-- `(a*b)` is a multiplication → each parent gets `(a*b).grad` times the other's
+- `(a*b)` is a multiplication → each stem gets `(a*b).grad` times the other's
   value: `a.grad += 1·b = 4`, `b.grad += 1·a = 3`.
 
 Totals: `a.grad = 1 + 4 = 5`, `b.grad = 3`. Exactly the hand calculation — and

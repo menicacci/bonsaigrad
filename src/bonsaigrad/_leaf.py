@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Tuple, List, Set
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -13,8 +14,8 @@ class Leaf:
     ----------
     data : array_like
         The value this node carries. Coerced to a ``float64`` ``np.ndarray``.
-    _children : tuple[Leaf, ...]
-        The parent nodes this one was built from. Internal; set by the ops.
+    _stems : Tuple[Leaf, ...]
+        The nodes this one grew from. Internal; set by the ops.
     _op : str
         Label of the operation that produced this node (e.g. ``"+"``). Internal;
         used only for readable ``repr``s and, later, graph visualisation.
@@ -22,11 +23,11 @@ class Leaf:
 
     __array_ufunc__ = None
 
-    def __init__(self, data: ArrayLike, _children: tuple[Leaf, ...] = (), _op: str = ""):
+    def __init__(self, data: ArrayLike, _stems: Tuple[Leaf, ...] = (), _op: str = ""):
         self.data: np.ndarray = np.asarray(data, dtype=np.float64)
         self.grad: np.ndarray = np.zeros_like(self.data)
         self._backward: Callable[[], None] = lambda: None
-        self._prev: tuple[Leaf, ...] = _children
+        self._stems: Tuple[Leaf, ...] = _stems
         self._op: str = _op
 
     @staticmethod
@@ -59,14 +60,14 @@ class Leaf:
     __rmul__ = __mul__
 
     def wire(self) -> None:
-        topo: list[Leaf] = []
-        visited: set[Leaf] = set()
+        topo: List[Leaf] = []
+        visited: Set[Leaf] = set()
 
         def build(node: Leaf) -> None:
             if node not in visited:
                 visited.add(node)
-                for parent in node._prev:
-                    build(parent)
+                for stem in node._stems:
+                    build(stem)
                 topo.append(node)
 
         build(self)
