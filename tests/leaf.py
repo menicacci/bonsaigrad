@@ -69,6 +69,26 @@ class TestLeaf(unittest.TestCase):
         (a * a).wire()
         self.assertEqual(float(a.grad), 8.0)
 
+    def test_rest_zeroes_whole_graph(self):
+        # Zeroing reaches the apex and every node below it, not just the roots.
+        a, b = Leaf(2.0), Leaf(3.0)
+        out = a * b
+        out.wire()
+        out.rest()
+        self.assertEqual(float(out.grad), 0.0)
+        self.assertEqual(float(a.grad), 0.0)
+        self.assertEqual(float(b.grad), 0.0)
+
+    def test_rest_makes_wire_repeatable(self):
+        # Without resting, a second wire would double every stem's gradient.
+        a, b = Leaf(2.0), Leaf(3.0)
+        out = a * b
+        out.wire()
+        out.rest()
+        out.wire()
+        self.assertEqual(float(a.grad), 3.0)
+        self.assertEqual(float(b.grad), 2.0)
+
     def test_grad_check_affine(self):
         assert_grads(self, lambda a, b: a * b + a, [5.0, -2.0])
 

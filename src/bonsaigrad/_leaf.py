@@ -59,7 +59,8 @@ class Leaf:
     __radd__ = __add__
     __rmul__ = __mul__
 
-    def wire(self) -> None:
+    def _topo(self) -> List[Leaf]:
+        """This node and every node below it, each listed after its own stems."""
         topo: List[Leaf] = []
         visited: Set[Leaf] = set()
 
@@ -71,10 +72,19 @@ class Leaf:
                 topo.append(node)
 
         build(self)
+        return topo
+
+    def wire(self) -> None:
+        topo = self._topo()
 
         self.grad = np.ones_like(self.data)
         for n in reversed(topo):
             n._backward()
+
+    def rest(self) -> None:
+        """Zero the gradients on this apex and every node below it."""
+        for n in self._topo():
+            n.grad = np.zeros_like(n.data)
 
     def __repr__(self) -> str:
         return f"Leaf(data={self.data}, grad={self.grad})"
