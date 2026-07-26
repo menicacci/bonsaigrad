@@ -20,5 +20,7 @@ computation-graph node that holds a value and propagates gradients backward.
 - **Library depends on `numpy` only** — build everything else by hand, no
   autograd/NN libraries. Notebook tooling (matplotlib, jupyter) lives in the
   `notebooks` optional extra, never in core deps.
+- **Not a production library.** No CI, releases, or performance work — this is a
+  learning artefact. Tests run by hand with `python -m tests`.
 - Keep code clean and readable — a reference implementation, not a clever one.
 - Ask before large doc restructures.
