@@ -16,6 +16,12 @@ dependencies = [
     "numpy>=1.26.4",
 ]
 
+[project.optional-dependencies]
+notebooks = [
+    "matplotlib>=3.8",
+    "jupyter>=1.0",
+]
+
 [tool.setuptools.dynamic]
 version = { attr = "bonsaigrad.__version__" }
 
