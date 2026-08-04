@@ -66,7 +66,6 @@ class Leaf:
         return out
 
     def __pow__(self, exponent: Leaf | int | float) -> Leaf:
-        """``self`` raised to a power."""
         if isinstance(exponent, Leaf):
             return (exponent * self.log()).exp()
 
@@ -79,7 +78,6 @@ class Leaf:
         return out
 
     def log(self) -> Leaf:
-        """Natural logarithm, elementwise."""
         out = Leaf(np.log(self.data), (self,), "log")
 
         def _backward() -> None:
@@ -89,7 +87,6 @@ class Leaf:
         return out
 
     def exp(self) -> Leaf:
-        """``e`` raised to ``self``, elementwise."""
         out = Leaf(np.exp(self.data), (self,), "exp")
 
         def _backward() -> None:
@@ -99,7 +96,6 @@ class Leaf:
         return out
 
     def __matmul__(self, other: Leaf | ArrayLike) -> Leaf:
-        """Matrix product, for operands of 2 axes or more."""
         other: Leaf = self._wrap(other)
         if self.data.ndim < 2 or other.data.ndim < 2:
             raise ValueError(
@@ -123,25 +119,21 @@ class Leaf:
     __rmul__ = __mul__
 
     def __neg__(self) -> Leaf:
-        """``-a`` is ``a · -1``."""
         return self * -1.0
 
     def __sub__(self, other: Leaf | ArrayLike) -> Leaf:
-        """``a - b`` is ``a + (-b)``."""
         return self + (-self._wrap(other))
 
     def __rsub__(self, other: Leaf | ArrayLike) -> Leaf:
         return self._wrap(other) + (-self)
 
     def __truediv__(self, other: Leaf | ArrayLike) -> Leaf:
-        """``a / b`` is ``a · b⁻¹``."""
         return self * self._wrap(other) ** -1.0
 
     def __rtruediv__(self, other: Leaf | ArrayLike) -> Leaf:
         return self._wrap(other) * self ** -1.0
 
     def __rpow__(self, base: Leaf | ArrayLike) -> Leaf:
-        """``k ** a`` is ``e^(a·ln k)`` — built the same way as ``__pow__``."""
         return (self * self._wrap(base).log()).exp()
 
     def _topo(self) -> List[Leaf]:
