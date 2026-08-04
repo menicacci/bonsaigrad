@@ -1,8 +1,5 @@
 # 03 — Operations
 
-The operations that build on broadcasting from [02 — Shapes](02-shapes.md).
-
-
 With shapes handled, we can widen the op set. But most of it needs no new
 gradient rule, because a new op is only *primitive* if it cannot be written with
 the ops we already have.
