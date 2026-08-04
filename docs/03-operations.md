@@ -9,15 +9,30 @@ exponent, `log` and `exp`. Every other op is built from those:
 
 | op        | built from            | new backward? |
 |-----------|-----------------------|---------------|
-| `a ** k`  | —                     | **yes**       |
-| `a.log()` | —                     | **yes**       |
-| `a.exp()` | —                     | **yes**       |
 | `-a`      | `a * -1`              | no            |
 | `a - b`   | `a + (-b)`            | no            |
+| `a ** k`  | —                     | **yes**       |
 | `a / b`   | `a * b ** -1`         | no            |
+| `a.log()` | —                     | **yes**       |
+| `a.exp()` | —                     | **yes**       |
 | `a ** b`  | `(b * a.log()).exp()` | no            |
 
 The three primitives come first, then the ops assembled from them.
+
+### Negation and subtraction
+
+`-a` is `a · -1`, so multiplication's cross-wire rule hands back `out.grad · -1`
+— the sign flip we expect. Subtraction then follows for free:
+
+```
+a - b  =  a + (b · -1)
+
+∂L/∂a = out.grad · 1  =  out.grad
+∂L/∂b = out.grad · 1 · -1 = -out.grad
+```
+
+Which is the textbook rule for subtraction, assembled out of two steps we had
+already proved.
 
 ### Powers
 
@@ -27,6 +42,27 @@ and the chain rule scales the incoming gradient by it:
 ```
 ∂out/∂a = k·a^(k-1)          →      self.grad += k · a^(k-1) · out.grad
 ```
+
+### Division
+
+`a / b` is `a · b⁻¹`. The gradient w.r.t. `a` is immediate. For `b`, the signal
+crosses two nodes — the multiply, then the power — and the chain rule multiplies
+the local derivatives along the way:
+
+$$
+t = b^{-1}
+\qquad\qquad
+\texttt{out} = a \cdot t
+$$
+
+$$
+\frac{\partial L}{\partial t}
+= \texttt{out.grad} \cdot a
+\qquad\longrightarrow\qquad
+\frac{\partial L}{\partial b}
+= \frac{\partial L}{\partial t} \cdot (-1)b^{-2}
+= -\frac{\texttt{out.grad} \cdot a}{b^2}
+$$
 
 ### Logarithm and exponential
 
@@ -54,98 +90,25 @@ what it is differentiating. Both gradients fall out, including the awkward one:
 ∂L/∂b = out.grad · aᵇ · ln a           (through the multiply)
 ```
 
-That second one is `∂(aᵇ)/∂b = aᵇ·ln a`, the rule nobody remembers, and it
-arrives for free.
 
 `k ** a` — a plain number raised to a `Leaf` — is built the same way, through
 `__rpow__`.
 
 > **Aside: why keep the constant exponent primitive?**
 >
-> The same rewrite would cover a constant exponent too, so we could delete the
-> `**` backward rule and keep only two primitives. We don't, because `ln a` needs
-> `a > 0`:
+> A fixed exponent and a `Leaf` exponent need different gradients. With
+> `a ** k`, we only differentiate with respect to `a`, so the direct rule
+> `k * a ** (k - 1)` is enough. We do not rewrite it through `log(a)`, because
+> `a` can be negative while `log(a)` is defined only for `a > 0`:
 >
 > ```
-> (-2.0) ** 3     via  k·a^(k-1)        →  -8.0
->                 via  e^(3·ln -2.0)    →   nan
+> (-2.0) ** 3              →  -8.0
+> exp(3 * log(-2.0))       →   nan
 > ```
 >
-> Which raises the mirror question: if that limit is enough to rule the rewrite
-> out here, why is it fine for `a ** b`? Because the two limits come from
-> different places. For a constant exponent the limit is **our own doing** —
-> `(-2.0)³` really is `-8`, and we would lose it only by picking a route that
-> goes through `ln`. For a `Leaf` exponent the limit is **built into the maths**:
-> `ln a` sits inside the true derivative `∂(aᵇ)/∂b = aᵇ·ln a`, not just inside
-> our way of computing it, and `aᵇ` is not even a real number for negative `a`
-> at a fractional `b`. So the derived path gives up nothing we ever had.
->
-> So `**` keeps two paths: a primitive one for constants, which works
-> everywhere, and a derived one for `Leaf` exponents, which works where `ln`
-> does.
+> For `a ** b`, where `b` is a `Leaf`, the rewrite is appropriate because its
+> gradient with respect to `b` inherently contains `log(a)`.
 
-### Negation and subtraction
-
-`-a` is `a · -1`, so multiplication's cross-wire rule hands back `out.grad · -1`
-— the sign flip we expect. Subtraction then follows for free:
-
-```
-a - b  =  a + (b · -1)
-
-∂L/∂a = out.grad · 1  =  out.grad
-∂L/∂b = out.grad · 1 · -1 = -out.grad
-```
-
-Which is the textbook rule for subtraction, assembled out of two steps we had
-already proved.
-
-### Division
-
-`a / b` is `a · b⁻¹`. The gradient w.r.t. `a` is immediate. For `b`, the signal
-crosses two nodes — the multiply, then the power — and the chain rule multiplies
-the local derivatives along the way:
-
-$$
-t = b^{-1}
-\qquad\qquad
-\texttt{out} = a \cdot t
-$$
-
-$$
-\frac{\partial L}{\partial t}
-= \texttt{out.grad} \cdot a
-\qquad\longrightarrow\qquad
-\frac{\partial L}{\partial b}
-= \frac{\partial L}{\partial t} \cdot (-1)b^{-2}
-= -\frac{\texttt{out.grad} \cdot a}{b^2}
-$$
-
-Exactly the quotient rule, and nobody had to write it down.
-
-### Reflected operands
-
-So far we have written the `Leaf` on the left: `leaf - 3.0`. But `3.0 - leaf`
-cannot call `Leaf.__sub__`, because the left operand is a `float`. Python then
-tries the *reflected* method on the right operand, `leaf.__rsub__(3.0)`. Its job
-is to put the operands back in their original order:
-
-```python
-def __rsub__(self, other):
-    return self._wrap(other) + (-self)  # other - self, not self - other
-
-
-def __rtruediv__(self, other):
-    return self._wrap(other) * self ** -1.0
-```
-
-`__radd__ = __add__` and `__rmul__ = __mul__` can be plain aliases because
-addition and multiplication can swap their operands. Subtraction and division
-cannot. The same order-preserving idea will apply to `@` in the next section.
-
-One subtlety carried over from 01: `np.array([1.0, 2.0]) / leaf` would normally
-let NumPy take charge and build an object array of `Leaf`s, dropping the whole
-expression out of the graph. `__array_ufunc__ = None` on the class tells NumPy to
-stand down and defer to `__rtruediv__`.
 
 ## Matrix product
 
