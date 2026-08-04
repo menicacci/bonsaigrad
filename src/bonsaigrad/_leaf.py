@@ -34,13 +34,22 @@ class Leaf:
     def _wrap(other: Leaf | ArrayLike) -> Leaf:
         return other if isinstance(other, Leaf) else Leaf(other)
 
+    @staticmethod
+    def _unbroadcast(grad: np.ndarray, shape: Tuple[int, ...]) -> np.ndarray:
+        """Sum ``grad`` back down to ``shape``, undoing a forward broadcast."""
+        if grad.shape == shape:
+            return grad
+        grad = grad.sum(axis=tuple(range(grad.ndim - len(shape))))  # axes NumPy prepended
+        stretched = tuple(i for i, n in enumerate(shape) if n == 1)  # axes stretched from 1
+        return grad.sum(axis=stretched, keepdims=True) if stretched else grad
+
     def __add__(self, other: Leaf | ArrayLike) -> Leaf:
         other: Leaf = self._wrap(other)
         out = Leaf(self.data + other.data, (self, other), "+")
 
         def _backward() -> None:
-            self.grad += out.grad
-            other.grad += out.grad
+            self.grad += self._unbroadcast(out.grad, self.data.shape)
+            other.grad += self._unbroadcast(out.grad, other.data.shape)
 
         out._backward = _backward
         return out
@@ -50,8 +59,8 @@ class Leaf:
         out = Leaf(self.data * other.data, (self, other), "*")
 
         def _backward() -> None:
-            self.grad += other.data * out.grad
-            other.grad += self.data * out.grad
+            self.grad += self._unbroadcast(other.data * out.grad, self.data.shape)
+            other.grad += self._unbroadcast(self.data * out.grad, other.data.shape)
 
         out._backward = _backward
         return out
