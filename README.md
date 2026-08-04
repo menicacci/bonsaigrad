@@ -24,7 +24,8 @@ pip install -e .[notebooks]
 Build the pieces bottom-up, culminating in a trainable GPT:
 
 - [x] `Leaf` — the autograd node and reverse-mode backprop
-- [ ] Tensor ops and broadcasting-aware gradients
+- [x] Broadcasting-aware gradients
+- [ ] Math operations
 - [ ] Layers (Linear, activations, LayerNorm, …) and the MLP
 - [ ] Losses and optimizers (SGD, Adam)
 - [ ] Attention, Transformer blocks, and a full GPT
