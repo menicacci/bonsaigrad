@@ -4,10 +4,10 @@
 
 ## Why?
 
-Everything in [01](01-leaf.md) worked, but every example held a single number.
-Neural network's layers hold a matrix of weights and a bias vector is added to
-every row of that batch. `Leaf.data` has been a `np.ndarray` from the start —
-now we actually use the shape.
+Everything in [01](01-leaf.md) worked, but every example used a single number.
+Neural-network layers, by contrast, hold matrices of weights, and a bias vector
+is added to every row in a batch. `Leaf.data` has been a `np.ndarray` from the
+start — now we begin to use its shape.
 
 The moment shapes stop matching, one question decides everything:
 
@@ -22,12 +22,12 @@ Every node obeys one rule, from `__init__` onwards:
 leaf.grad.shape == leaf.data.shape  # always
 ```
 
-It is not a convention, it is what a gradient *is*. `data` holds one number per
-knob; `grad` holds `∂L/∂knob` — one answer per knob.
+This is not merely a convention; it is what a gradient *is*. `data` holds one
+number per knob, and `grad` holds `∂L/∂knob` — one answer per knob.
 
 ## Broadcasting
 
-Let's consider this example:
+Consider this example:
 
 ```python
 m + v  # m is (4, 3), v is (3,)
@@ -39,8 +39,8 @@ is the second one.
 
 ### How
 
-Align the shapes **from the right**. Pad the shorter one with `1`s on the left. Any
-axis of length `1` then **stretches** to match the other:
+Align the shapes **from the right**, padding the shorter one with `1`s on the
+left. Any axis of length `1` can then **stretch** to match the other:
 
 $$
 m : (4, 3)
@@ -63,9 +63,9 @@ is `1`**. Nothing else broadcasts:
                    together with shapes (2,3) (2,)
 ```
 
-Here `(2,)` aligns under the `3`, and lengths 2 and 3 are incompatible. Nothing in
-the shape says the `2` was meant to count rows. Written as `(2, 1)`, the `1` sits
-under the `3` and stretches across it.
+Here `(2,)` aligns under the `3`, so lengths 2 and 3 are incompatible. Nothing
+in its shape says that the `2` was meant to count rows. Written as `(2, 1)`, the
+`1` sits under the `3` and stretches across it.
 
 More examples:
 
@@ -106,10 +106,10 @@ the sum of four terms.
 
 ![Example 02.01](images/02-broadcast-mul.png)
 
-Going up, `a` is stretched across 3 columns — three real numbers, six re-reads —
-while `b` is left alone. Coming down, multiplication's cross-wire sends each stem
-the incoming gradient scaled by the **other** stem, and only then are the shapes
-fixed. The two stems need different fixes:
+On the way up, `a` stretches across 3 columns — three real numbers, each
+re-read twice — while `b` is left alone. On the way down, multiplication's cross-wire
+sends each stem the incoming gradient scaled by the **other** stem; only then do
+we restore the original shapes. The two stems need different fixes:
 
 - `a.grad` is `b · out.grad` **summed along axis 1**, collapsing `(3, 3)` back to
   `(3, 1)`.
@@ -164,21 +164,21 @@ def _unbroadcast(grad: np.ndarray, shape: Tuple[int, ...]) -> np.ndarray:
     return grad.sum(axis=stretched, keepdims=True) if stretched else grad
 ```
 
-To route a gradient back to its source, it must perfectly match the stem's original shape.
-During the forward pass, NumPy broadcasting alters shapes in exactly two ways: it pads new
-axes on the left, and it stretches existing size-1 axes.
+To route a gradient back to its source, it must match the stem's original shape
+exactly. During the forward pass, NumPy broadcasting changes shapes in only two
+ways: it adds axes on the left and stretches existing size-1 axes.
 
-This function undoes those two moves in reverse order. Let's look at how it handles four
-common scenarios.
+This function reverses those two moves. Let us walk through the three common
+cases it handles.
 
 ### 1. Perfect Match
 
 **Forward pass:** `(2, 3) + (2, 3) → (2, 3)`
 **Backward pass:** `grad.shape` is `(2, 3)`, stem `shape` is `(2, 3)`
 
-When the shapes already match, no broadcasting occurred.
+When the shapes already match, no broadcasting took place.
 
-* **The Code:** The `if grad.shape == shape: return grad` block catches this.
+* **In code:** `if grad.shape == shape: return grad` catches this case.
 
 ### 2. Dropping Padded Axes (Left-Side Padding)
 
@@ -190,8 +190,8 @@ to make it `(1, 3)` before stretching it.
 
 To undo this, we must sum out those newly added leading axes entirely.
 
-* **The Code:** `grad = grad.sum(axis=tuple(range(grad.ndim - len(shape))))`
-* **How it works:**
+* **In code:** `grad = grad.sum(axis=tuple(range(grad.ndim - len(shape))))`
+* **Step by step:**
 
 1. `grad.ndim` is 2. `len(shape)` is 1. The difference is 1.
 2. The code generates `range(1)`, so it sums over `axis=(0,)`.
@@ -208,8 +208,8 @@ does nothing. However, the stem's second axis was stretched from `1` to `3`.
 To gather the gradient, we must sum along that stretched axis, but we **must
 keep the dimension** so the final shape remains 2D.
 
-* **The Code:** `stretched = tuple(i for i, n in enumerate(shape) if n == 1)`
-* **How it works:**
+* **In code:** `stretched = tuple(i for i, n in enumerate(shape) if n == 1)`
+* **Step by step:**
 
 1. The code looks at the stem `shape`: `(2, 1)`.
 2. It finds a `1` at index 1, so `stretched = (1,)`.
@@ -219,15 +219,16 @@ keep the dimension** so the final shape remains 2D.
 
 ## Using it
 
-Every op that can broadcast routes each stem's gradient through it. Addition:
+Every operation that can broadcast routes each stem's gradient through
+`_unbroadcast`. For addition:
 
 ```python
 self.grad += self._unbroadcast(out.grad, self.data.shape)
 other.grad += self._unbroadcast(out.grad, other.data.shape)
 ```
 
-and multiplication, where the local derivative `other.data` is itself the
-broadcast product, so the fitting happens *after* the multiply:
+For multiplication, the local derivative `other.data` is itself part of the
+broadcast product, so the fitting happens *after* the multiplication:
 
 ```python
 self.grad += self._unbroadcast(other.data * out.grad, self.data.shape)
