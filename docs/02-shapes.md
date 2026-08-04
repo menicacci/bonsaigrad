@@ -104,9 +104,6 @@ Broadcasting produces those paths without producing nodes. If `a[i, 0]` is used 
 four entries of `out`, four paths lead from it to the output, and its gradient is
 the sum of four terms.
 
-Both **stems** of one broadcast multiply — the nodes an op grew from — and where
-each gradient comes from:
-
 ![Example 02.01](images/02-broadcast-mul.png)
 
 Going up, `a` is stretched across 3 columns — three real numbers, six re-reads —
@@ -115,18 +112,8 @@ the incoming gradient scaled by the **other** stem, and only then are the shapes
 fixed. The two stems need different fixes:
 
 - `a.grad` is `b · out.grad` **summed along axis 1**, collapsing `(3, 3)` back to
-  `(3, 1)` — the row sums of `b`, one term for each column `a` was copied into.
-- `b.grad` is `a · out.grad` with **no sum at all**: it is already `(3, 3)`. Its
-  entries come out equal to `a` repeated across every row — the copies made on the
-  way up, now showing up as gradient.
-
-Same op, same call to `_unbroadcast`, two different amounts of work — decided
-entirely by each stem's own shape.
-
-The same conclusion follows from linearity. A broadcast copies entries; it does not
-scale or mix them, so it is a **linear** map, and the backward pass of a linear map
-is its transpose. The transpose of *copy one value into four slots* is *sum those
-four slots into one value*:
+  `(3, 1)`.
+- `b.grad` is `a · out.grad` with **no sum at all**: it is already `(3, 3)`.
 
 ```
 forward:   stretch an axis   (one value → many)
@@ -134,8 +121,7 @@ backward:  sum along it      (many terms → one)
 ```
 
 So the backward of a broadcast sums the incoming gradient over exactly the axes
-that were stretched. Forward copies, backward sums. The same mirroring returns with
-`@`, where forward contracts an axis and backward restores it.
+that were stretched. Forward copies, backward sums.
 
 ### Example
 
