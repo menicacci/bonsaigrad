@@ -98,14 +98,11 @@ class Leaf:
     def __matmul__(self, other: Leaf | ArrayLike) -> Leaf:
         other: Leaf = self._wrap(other)
         if self.data.ndim < 2 or other.data.ndim < 2:
-            raise ValueError(
-                f"@ needs operands of 2 axes or more, got shapes "
-                f"{self.data.shape} and {other.data.shape}"
-            )
+            raise ValueError(f"@ needs operands of 2 axes or more, got shapes {self.data.shape} and {other.data.shape}")
+
         out = Leaf(self.data @ other.data, (self, other), "@")
 
         def _backward() -> None:
-            # transpose the *last two* axes only — the rest are batch axes
             self.grad += self._unbroadcast(out.grad @ other.data.swapaxes(-1, -2), self.data.shape)
             other.grad += self._unbroadcast(self.data.swapaxes(-1, -2) @ out.grad, other.data.shape)
 
