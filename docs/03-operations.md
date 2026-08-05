@@ -112,24 +112,10 @@ what it is differentiating. Both gradients fall out, including the awkward one:
 
 ## Matrix product
 
-Every op so far was **elementwise**: each output entry came from entries in the
-same position in its stems. `@` is different. It combines a row from the left
-matrix with a column from the right one, so one input entry can help make several
-output entries:
-
-```
-(n, m) @ (m, p)  →  (n, p)
-```
-
-This is the op a layer is made of. `x @ w` takes a batch of `n` examples with `m`
-features and produces `n` rows of `p` outputs, mixing every input feature into
-every output.
-
 ### Intuition
 
-Take `a` of shape `(2, 3)` and `b` of shape `(3, 2)`. Their product has shape
-`(2, 2)`. Write out the whole small example once, then we only need to watch one
-number: `a[0,0]` (the `a₁₁` below).
+Take `a` of shape `(2, 3)` and `b` of shape `(3, 2)`, their product has shape
+`(2, 2)`:
 
 $$
 A =
@@ -156,9 +142,7 @@ a_{21}b_{12} + a_{22}b_{22} + a_{23}b_{32}
 \end{bmatrix}
 $$
 
-Only the first row contains `a₁₁`. If we nudge `a₁₁` upward by one tiny step,
-the first output entry changes by `b₁₁`, the second changes by `b₁₂`, and the
-second row does not change at all:
+Let's focus on `a₁₁`:
 
 $$
 \frac{\partial (AB)}{\partial a_{11}} =
@@ -167,22 +151,6 @@ b_{11} & b_{12} \\
 0 & 0
 \end{bmatrix}
 $$
-
-The zeros are useful. They say that the bottom row of `AB` has no path back to
-`a₁₁`, so no gradient from there can reach it.
-
-In the forward pass, matrix multiplication **reuses** that number once for each
-column of `b`. It helps make the first two output entries:
-
-$$
-a_{11} \xrightarrow{\times b_{11}} (AB)_{11}
-\qquad\qquad
-a_{11} \xrightarrow{\times b_{12}} (AB)_{12}
-$$
-
-Those are not the whole output entries: each also receives contributions from
-`a[0,1]` and `a[0,2]`. But they are the only two places where `a[0,0]` appears.
-It never helps make row `1`, because that row starts from `a[1,*]` instead.
 
 Now call `wire()`. `out.grad` arrives from above with one incoming gradient per
 output entry. Reverse each of the two forward paths:
@@ -199,10 +167,6 @@ g_{12}
 $$
 
 Both arrows land at the same entry, so their values add.
-
-This is the same rule we already know from a reused `Leaf`: one forward use means
-one backward path, and several paths add together. The only new part is that the
-other matrix supplies the scale on each path.
 
 > `a[0,0]` receives the gradient from every output entry it helped make, each
 > multiplied by the matching number from `b`.
@@ -320,6 +284,8 @@ So the transpose is just an alignment move. It places the axis we need to add
 over in the two touching positions of `@`; matrix multiplication then does the
 pair-and-add work for every entry at once.
 
+> For a deeper understanding, see [*Gradients of Matrix Multiplication in Deep Learning*](https://robotchinwag.com/posts/gradient-of-matrix-multiplicationin-deep-learning/).
+
 ### Rule
 
 The implementation performs all of those little path-and-add stories at once:
@@ -352,12 +318,3 @@ w = Leaf(np.ones((3, 4)))  # one weight matrix, shared
 x.grad.shape  # (5, 2, 3)
 w.grad.shape  # (3, 4)  — summed over all 5 × 2 rows that used it
 ```
-
-### Not 1-D
-
-A 1-D operand is refused with a `ValueError`. NumPy would happily promote a `(m,)`
-vector to a matrix, contract, then drop the axis again — but each promotion case
-(`vector·vector`, `vector@matrix`, `matrix@vector`) needs a *different* backward
-rule, and we have no reshape op yet to do the promotion inside the graph where the
-gradient could find its way back. Refusing beats silently returning a gradient of
-the wrong shape. A row of a batch is a `(1, m)` matrix, and that already works.
