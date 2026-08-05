@@ -70,7 +70,10 @@ def draw_graph(
         (_FORWARD, _FORWARD_FILL) if is_forward else (_BACKWARD, _BACKWARD_FILL)
     )
 
-    fired_nodes = set(fired or ())
+    if fired is None and apex.grad.item():
+        fired_nodes = {id(node) for node in nodes if node._stems}
+    else:
+        fired_nodes = set(fired or ())
     live_nodes = _live_nodes(apex, nodes, shoots, fired_nodes, is_forward)
 
     if ax is None:
