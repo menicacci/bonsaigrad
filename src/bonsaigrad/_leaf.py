@@ -65,8 +65,73 @@ class Leaf:
         out._backward = _backward
         return out
 
+    def __pow__(self, exponent: Leaf | int | float) -> Leaf:
+        if isinstance(exponent, Leaf):
+            return (exponent * self.log()).exp()
+
+        out = Leaf(self.data ** exponent, (self,), f"**{exponent:g}")
+
+        def _backward() -> None:
+            self.grad += exponent * self.data ** (exponent - 1) * out.grad
+
+        out._backward = _backward
+        return out
+
+    def log(self) -> Leaf:
+        out = Leaf(np.log(self.data), (self,), "log")
+
+        def _backward() -> None:
+            self.grad += out.grad / self.data
+
+        out._backward = _backward
+        return out
+
+    def exp(self) -> Leaf:
+        out = Leaf(np.exp(self.data), (self,), "exp")
+
+        def _backward() -> None:
+            self.grad += out.data * out.grad
+
+        out._backward = _backward
+        return out
+
+    def __matmul__(self, other: Leaf | ArrayLike) -> Leaf:
+        other: Leaf = self._wrap(other)
+        if self.data.ndim < 2 or other.data.ndim < 2:
+            raise ValueError(f"@ needs operands of 2 axes or more, got shapes {self.data.shape} and {other.data.shape}")
+
+        out = Leaf(self.data @ other.data, (self, other), "@")
+
+        def _backward() -> None:
+            self.grad += self._unbroadcast(out.grad @ other.data.swapaxes(-1, -2), self.data.shape)
+            other.grad += self._unbroadcast(self.data.swapaxes(-1, -2) @ out.grad, other.data.shape)
+
+        out._backward = _backward
+        return out
+
+    def __rmatmul__(self, other: Leaf | ArrayLike) -> Leaf:
+        return self._wrap(other) @ self
+
     __radd__ = __add__
     __rmul__ = __mul__
+
+    def __neg__(self) -> Leaf:
+        return self * -1.0
+
+    def __sub__(self, other: Leaf | ArrayLike) -> Leaf:
+        return self + (-self._wrap(other))
+
+    def __rsub__(self, other: Leaf | ArrayLike) -> Leaf:
+        return self._wrap(other) + (-self)
+
+    def __truediv__(self, other: Leaf | ArrayLike) -> Leaf:
+        return self * self._wrap(other) ** -1.0
+
+    def __rtruediv__(self, other: Leaf | ArrayLike) -> Leaf:
+        return self._wrap(other) * self ** -1.0
+
+    def __rpow__(self, base: Leaf | ArrayLike) -> Leaf:
+        return (self * self._wrap(base).log()).exp()
 
     def _topo(self) -> List[Leaf]:
         """This node and every node below it, each listed after its own stems."""
