@@ -4,6 +4,7 @@ import argparse
 
 import numpy as np
 
+from bonsaigrad import Leaf
 from bonsaigrad.nn import Linear, Sequential, Tanh
 
 
@@ -35,9 +36,9 @@ def main() -> None:
         Linear(16, 1, rng),
     )
 
-    initial_loss = 0.0
+    initial_loss: float = 0.0
     for step in range(args.steps):
-        loss = ((model(inputs) - targets) ** 2).mean()
+        loss: Leaf = ((model(inputs) - targets) ** 2).mean()
         loss.wire()
         print(f"step {step + 1:>5}/{args.steps}: loss = {float(loss.data):.8f}")
 
