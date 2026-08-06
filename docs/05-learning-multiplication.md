@@ -12,10 +12,10 @@ values; $v$ gives one output weight to each of those values.
 
 | symbol | parameter | structure | shape |
 |:------:|:---------:|:---------:|:-----:|
-| $W$ | `input_weights` | $\begin{bmatrix} w_{11} & w_{12} & w_{13} & w_{14} & w_{15} & w_{16} \\ w_{21} & w_{22} & w_{23} & w_{24} & w_{25} & w_{26} \end{bmatrix}$ | `(2, 6)` |
-| $\beta$ | `hidden_bias` | $\begin{bmatrix} \beta_1 & \beta_2 & \beta_3 & \beta_4 & \beta_5 & \beta_6 \end{bmatrix}$ | `(6,)` |
-| $v$ | `output_weights` | $\begin{bmatrix} v_1 \\ v_2 \\ v_3 \\ v_4 \\ v_5 \\ v_6 \end{bmatrix}$ | `(6, 1)` |
-| $\gamma$ | `output_bias` | $\begin{bmatrix} \gamma \end{bmatrix}$ | `(1,)` |
+| $W$ | `input_weights` | $`\begin{bmatrix} w_{11} & w_{12} & w_{13} & w_{14} & w_{15} & w_{16} \\ w_{21} & w_{22} & w_{23} & w_{24} & w_{25} & w_{26} \end{bmatrix}`$ | `(2, 6)` |
+| $\beta$ | `hidden_bias` | $`\begin{bmatrix} \beta_1 & \beta_2 & \beta_3 & \beta_4 & \beta_5 & \beta_6 \end{bmatrix}`$ | `(6,)` |
+| $v$ | `output_weights` | $`\begin{bmatrix} v_1 \\ v_2 \\ v_3 \\ v_4 \\ v_5 \\ v_6 \end{bmatrix}`$ | `(6, 1)` |
+| $\gamma$ | `output_bias` | $`\begin{bmatrix} \gamma \end{bmatrix}`$ | `(1,)` |
 
 For one pair, the forward pass is the same vertical sequence of matrix
 operations. A square is applied to each of the six hidden values separately:
