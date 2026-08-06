@@ -17,7 +17,7 @@ Calling `model(inputs)` is the same as writing
 
 $$
 \operatorname{Linear}_2(
-    \tanh(\operatorname{Linear}_1(x))
+\tanh(\operatorname{Linear}_1(x))
 ).
 $$
 
@@ -77,11 +77,4 @@ Install the project, then run the example from the repository root:
 ```bash
 pip install -e .
 python examples/08_learn_determinant.py
-```
-
-It trains on 256 random matrices for 5,000 steps by default. Use `--examples`
-and `--steps` to make a shorter experiment while exploring:
-
-```bash
-python examples/08_learn_determinant.py --examples 32 --steps 100
 ```
