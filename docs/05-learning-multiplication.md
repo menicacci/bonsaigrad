@@ -102,6 +102,11 @@ for parameter in self.parameters:
     parameter.rest()
 ```
 
+>`learning_rate` controls the size of each move. A small value makes training
+>progress slowly; a value that is too large can step past lower-loss values and
+>make training unstable. Here we choose it by hand. Later, optimizers will give
+>us more systematic ways to choose and adjust these updates.
+
 `rest()` clears the old gradients before the next training step builds a new
 computation graph. The script prints the loss before each update and, at the
 end, compares a few predictions with their expected products.
