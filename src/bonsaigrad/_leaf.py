@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Tuple, List, Set
+from typing import Tuple, List, Set, Optional, Union
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -94,6 +94,29 @@ class Leaf:
 
         out._backward = _backward
         return out
+
+    def sum(self, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Leaf:
+        out = Leaf(self.data.sum(axis=axis, keepdims=keepdims), (self,), "sum")
+
+        def _backward() -> None:
+            grad = out.grad
+            if axis is not None and not keepdims:
+                axes: Tuple[int] = (axis,) if isinstance(axis, int) else axis
+                for reduced_axis in sorted(a % self.data.ndim for a in axes):
+                    grad = np.expand_dims(grad, reduced_axis)
+            self.grad += np.broadcast_to(grad, self.data.shape)
+
+        out._backward = _backward
+        return out
+
+    def mean(self, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Leaf:
+        total = self.sum(axis=axis, keepdims=keepdims)
+        if axis is None:
+            count = self.data.size
+        else:
+            axes: Tuple[int] = (axis,) if isinstance(axis, int) else axis
+            count = np.prod([self.data.shape[a % self.data.ndim] for a in axes])
+        return total / count
 
     def __matmul__(self, other: Leaf | ArrayLike) -> Leaf:
         other: Leaf = self._wrap(other)
