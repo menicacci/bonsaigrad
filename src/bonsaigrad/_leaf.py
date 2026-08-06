@@ -95,6 +95,35 @@ class Leaf:
         out._backward = _backward
         return out
 
+    def relu(self) -> Leaf:
+        out = Leaf(np.maximum(self.data, 0.0), (self,), "relu")
+
+        def _backward() -> None:
+            self.grad += (out.data > 0.0) * out.grad
+
+        out._backward = _backward
+        return out
+
+    def sigmoid(self) -> Leaf:
+        magnitude = np.exp(-np.abs(self.data))
+        data = np.where(self.data >= 0.0, 1.0 / (1.0 + magnitude), magnitude / (1.0 + magnitude))
+        out = Leaf(data, (self,), "sigmoid")
+
+        def _backward() -> None:
+            self.grad += out.data * (1.0 - out.data) * out.grad
+
+        out._backward = _backward
+        return out
+
+    def tanh(self) -> Leaf:
+        out = Leaf(np.tanh(self.data), (self,), "tanh")
+
+        def _backward() -> None:
+            self.grad += (1.0 - out.data ** 2) * out.grad
+
+        out._backward = _backward
+        return out
+
     def sum(self, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Leaf:
         out = Leaf(self.data.sum(axis=axis, keepdims=keepdims), (self,), "sum")
 
