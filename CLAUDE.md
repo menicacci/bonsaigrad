@@ -11,9 +11,8 @@ computation-graph node that holds a value and propagates gradients backward.
   loud, propose and discuss before implementing, push back and flag trade-offs.
 - **Step by step.** Bottom-up, one component at a time, in small increments.
   Don't build on foundations that don't exist yet.
-- **Explain everything.** Each component gets a `docs/NN-slug.md` (the math, the
-  why — not just the API) and a runnable `notebooks/NN_slug.ipynb` that
-  *visualises* it. Add/update both in the same step as the code.
+- **Explain everything.** Each component gets a `docs/NN-slug.md` covering the
+  math and the why — not just the API. Update it in the same step as the code.
 
 ## Constraints
 
