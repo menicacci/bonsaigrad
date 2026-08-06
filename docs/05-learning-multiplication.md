@@ -105,3 +105,19 @@ for parameter in self.parameters:
 `rest()` clears the old gradients before the next training step builds a new
 computation graph. The script prints the loss before each update and, at the
 end, compares a few predictions with their expected products.
+
+## Run it
+
+Install the project, then run the example from the repository root:
+
+```bash
+pip install -e .
+python examples/05_learn_multiplication.py
+```
+
+It trains on 128 random input pairs for 5,000 steps by default. Use
+`--examples` and `--steps` to make a shorter experiment while exploring:
+
+```bash
+python examples/05_learn_multiplication.py --examples 32 --steps 100
+```
