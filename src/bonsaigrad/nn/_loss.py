@@ -21,10 +21,8 @@ class CrossEntropyLoss(Module):
         if logits.data.ndim < 1 or logits.data.shape[-1] < 1:
             raise ValueError(f"CrossEntropyLoss needs at least one class, got shape {logits.data.shape}")
         if targets.shape != logits.data.shape[:-1]:
-            raise ValueError(
-                f"targets must have shape {logits.data.shape[:-1]} for logits of shape {logits.data.shape}, "
-                f"got {targets.shape}"
-            )
+            raise ValueError(f"targets must have shape {logits.data.shape[:-1]} for logits of shape "
+                             f"{logits.data.shape}, got {targets.shape}")
         if not np.issubdtype(targets.dtype, np.integer):
             raise TypeError("targets must contain integer class indices")
         if np.any((targets < 0) | (targets >= logits.data.shape[-1])):
