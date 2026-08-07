@@ -43,7 +43,7 @@ direction, so both are pulled toward their targets.
 ## `logsumexp`
 
 $$
-\operatorname{logsumexp}(x) = \log \sum_i e^{x_i}
+\mathrm{logsumexp}(x) = \log \sum_i e^{x_i}
 $$
 
 `Leaf.logsumexp(axis=None, keepdims=False)` can reduce all entries, one axis, or
@@ -137,7 +137,7 @@ $$
 The vector formed by these shares is called the **softmax** of $x$:
 
 $$
-\operatorname{softmax}(x)_i
+\mathrm{softmax}(x)_i
 = \frac{e^{x_i}}{\sum_j e^{x_j}}.
 $$
 
@@ -192,7 +192,7 @@ $$
 &= -\log \frac{e^{x_t}}{\sum_j e^{x_j}} \\
 &= -\left(\log e^{x_t} - \log \sum_j e^{x_j}\right) \\
 &= \log \sum_j e^{x_j} - x_t \\
-&= \operatorname{logsumexp}(x) - x_t.
+&= \mathrm{logsumexp}(x) - x_t.
 \end{aligned}
 $$
 
@@ -238,7 +238,7 @@ into the single scalar from which backpropagation starts.
 For one example, the loss is
 
 $$
-\ell = \operatorname{logsumexp}(x) - x_t.
+\ell = \mathrm{logsumexp}(x) - x_t.
 $$
 
 We already found that the derivative of `logsumexp` with respect to $x_i$ is
