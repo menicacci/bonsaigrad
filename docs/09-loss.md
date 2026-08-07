@@ -254,12 +254,9 @@ where $\mathbb{1}[i=t]$ is `1` for the correct class and `0` otherwise. Written
 out, the gradient is
 
 $$
-\frac{\partial \ell}{\partial x_i}
-=
-\begin{cases}
-p_i - 1 & i=t, \\
-p_i     & i\ne t.
-\end{cases}
+\frac{\partial \ell}{\partial x_t} = p_t - 1,
+\qquad
+\frac{\partial \ell}{\partial x_i} = p_i \quad (i \ne t).
 $$
 
 The `logsumexp` branch sends $p_i$ to every logit. The indexing branch sends
