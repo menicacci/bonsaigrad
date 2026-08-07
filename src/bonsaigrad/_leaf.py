@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Tuple, List, Set, Optional, Union
+from typing import Any, Tuple, List, Set, Optional, Union
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -42,6 +42,15 @@ class Leaf:
         grad = grad.sum(axis=tuple(range(grad.ndim - len(shape))))  # axes NumPy prepended
         stretched = tuple(i for i, n in enumerate(shape) if n == 1)  # axes stretched from 1
         return grad.sum(axis=stretched, keepdims=True) if stretched else grad
+
+    def __getitem__(self, key: Any) -> Leaf:
+        out = Leaf(self.data[key], (self,), "[]")
+
+        def _backward() -> None:
+            np.add.at(self.grad, key, out.grad)
+
+        out._backward = _backward
+        return out
 
     def __add__(self, other: Leaf | ArrayLike) -> Leaf:
         other: Leaf = self._wrap(other)
@@ -146,6 +155,26 @@ class Leaf:
             axes: Tuple[int] = (axis,) if isinstance(axis, int) else axis
             count = np.prod([self.data.shape[a % self.data.ndim] for a in axes])
         return total / count
+
+    def logsumexp(self, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Leaf:
+        maximum = np.max(self.data, axis=axis, keepdims=True)
+        shifted = np.exp(self.data - maximum)
+        total = shifted.sum(axis=axis, keepdims=True)
+        data = np.log(total) + maximum
+        if not keepdims:
+            data = np.squeeze(data, axis=axis)
+        out = Leaf(data, (self,), "logsumexp")
+
+        def _backward() -> None:
+            grad = out.grad
+            if axis is not None and not keepdims:
+                axes: Tuple[int] = (axis,) if isinstance(axis, int) else axis
+                for reduced_axis in sorted(a % self.data.ndim for a in axes):
+                    grad = np.expand_dims(grad, reduced_axis)
+            self.grad += shifted / total * grad
+
+        out._backward = _backward
+        return out
 
     def __matmul__(self, other: Leaf | ArrayLike) -> Leaf:
         other: Leaf = self._wrap(other)
