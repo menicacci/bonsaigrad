@@ -271,6 +271,28 @@ This gradient also explains how learning changes the prediction:
 - For every incorrect class, $p_i$ is positive. Gradient descent lowers those
   logits.
 
-If there are $N$ classification positions, the final mean divides every
-gradient by $N$. Each example or token therefore contributes equally to the
-reported loss.
+## Why Cross-Entropy Rather Than MSE?
+
+Imagine a yes/no classifier deciding whether an image contains a cat. The image
+does contain a cat, but the model assigns `1%` probability to `yes`. It is not
+merely wrong: it is confidently wrong, so this is exactly the case where we
+want a strong correction.
+
+To use MSE here, we compare the predicted probability (`0.01`) with the target
+probability (`1`). But that correction must then pass back through the
+sigmoid—the curve that converted the model's raw logit into `0.01`. Near zero,
+that curve is almost flat. Moving the raw logit a little barely changes the
+probability, so MSE sends only a weak instruction back to it.
+
+For this example, the learning signal that reaches the `yes` logit is about
+`0.02` with MSE, versus about `0.99` with cross-entropy: roughly fifty times
+stronger for cross-entropy. With the same small learning rate, one MSE update
+would move the predicted probability from about `1.000%` to `1.002%`.
+Cross-entropy would move it to about `1.10%`. Neither has solved the mistake in
+one step, but cross-entropy begins undoing a confident error at a useful pace.
+
+MSE can still learn this task; it just learns needlessly slowly whenever it is
+confident and wrong. Softmax has the same flat-at-the-extremes behaviour in the
+multiclass case. Cross-entropy avoids that extra weakening and also has a useful
+interpretation: it measures how little probability the model assigned to the
+answer that actually occurred.
