@@ -284,11 +284,30 @@ sigmoid—the curve that converted the model's raw logit into `0.01`. Near zero,
 that curve is almost flat. Moving the raw logit a little barely changes the
 probability, so MSE sends only a weak instruction back to it.
 
-For this example, the learning signal that reaches the `yes` logit is about
-`0.02` with MSE, versus about `0.99` with cross-entropy: roughly fifty times
-stronger for cross-entropy. With the same small learning rate, one MSE update
-would move the predicted probability from about `1.000%` to `1.002%`.
-Cross-entropy would move it to about `1.10%`. Neither has solved the mistake in
+For this example, the learning signals that reach the `yes` logit are
+
+$$
+\begin{aligned}
+\frac{\partial \ell_{\mathrm{CE}}}{\partial z} &= 0.01 - 1 = -0.99, \\
+\frac{\partial \ell_{\mathrm{MSE}}}{\partial z} &= 2(0.01 - 1)(0.01)(1 - 0.01) \approx -0.0196.
+\end{aligned}
+$$
+
+Their magnitudes are roughly fifty times apart. To make that difference feel
+concrete, use a learning rate of $0.1$. The current logit is
+$z \approx -4.595$, which produces a probability of $0.01$. One update gives
+
+$$
+\begin{aligned}
+z_{\mathrm{CE}}' &= -4.595 - 0.1(-0.99) 
+\approx -4.496, & p_{\mathrm{CE}}' &
+\approx 0.0110, \\ z_{\mathrm{MSE}}' &= -4.595 - 0.1(-0.0196) 
+\approx -4.593, & p_{\mathrm{MSE}}' &\approx 0.01002.
+\end{aligned}
+$$
+
+One MSE update changes the predicted probability from `1.000%` to `1.002%`;
+cross-entropy changes it to about `1.10%`. Neither has solved the mistake in
 one step, but cross-entropy begins undoing a confident error at a useful pace.
 
 MSE can still learn this task; it just learns needlessly slowly whenever it is
