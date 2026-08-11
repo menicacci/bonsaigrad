@@ -1,5 +1,7 @@
 # 09 — Loss
 
+> 🔬 Runnable companion: [`notebooks/09_loss.ipynb`](../notebooks/09_loss.ipynb)
+
 A model needs one number that says how wrong those predictions are: a **loss**.
 Backpropagation starts at that number and tells every parameter how it should
 change to make the next prediction a little better.
@@ -206,7 +208,7 @@ each of those positions:
 |---|---|---|
 | one example | `(classes,)` | `()` |
 | a batch | `(batch, classes)` | `(batch,)` |
-| a token batch | `(batch, time, vocabulary)` | `(batch, time)` |
+| a token batch | `(batch, time, classes)` | `(batch, time)` |
 
 For any leading shape, `np.indices(targets.shape)` creates the coordinates for
 each classification position. Add `targets` as the final coordinate to gather
