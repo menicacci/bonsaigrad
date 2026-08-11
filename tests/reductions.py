@@ -49,3 +49,32 @@ class TestReductions(unittest.TestCase):
         out.wire()
         self.assertEqual(out.data.shape, ())
         np.testing.assert_array_equal(values.grad, [2 / 3, 1 / 3, -1 / 3])
+
+    def test_logsumexp_is_stable_for_large_values(self):
+        values = np.array([1000.0, 1001.0, 1002.0])
+        expected = 1002.0 + np.log(np.exp(-2.0) + np.exp(-1.0) + 1.0)
+        np.testing.assert_allclose(Leaf(values).logsumexp().data, expected)
+
+    def test_logsumexp_axis_and_keepdims_match_reduction_shapes(self):
+        values = Leaf(np.arange(24.0).reshape(2, 3, 4))
+        out = values.logsumexp(axis=(0, -1), keepdims=True)
+        self.assertEqual(out.data.shape, (1, 3, 1))
+
+        maximum = values.data.max(axis=(0, 2), keepdims=True)
+        expected = np.log(np.exp(values.data - maximum).sum(axis=(0, 2), keepdims=True)) + maximum
+        np.testing.assert_allclose(out.data, expected)
+
+    def test_logsumexp_backward_is_softmax(self):
+        values = Leaf([[1.0, 2.0, 3.0], [-1.0, 1.0, 0.0]])
+        weights = Leaf([2.0, -3.0])
+        (values.logsumexp(axis=1) * weights).wire()
+
+        shifted = np.exp(values.data - values.data.max(axis=1, keepdims=True))
+        expected = shifted / shifted.sum(axis=1, keepdims=True) * weights.data[:, None]
+        np.testing.assert_allclose(values.grad, expected)
+
+    def test_grad_check_logsumexp(self):
+        values = np.linspace(-2.0, 2.0, 24).reshape(2, 3, 4)
+        assert_grads(self, lambda x: x.logsumexp(), [values])
+        assert_grads(self, lambda x: x.logsumexp(axis=(0, -1)), [values])
+        assert_grads(self, lambda x: x.logsumexp(axis=1, keepdims=True), [values])
