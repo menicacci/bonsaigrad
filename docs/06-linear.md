@@ -59,14 +59,34 @@ $$
 
 ### Initialization
 
-Before training starts, the scale of the random weights matters. If the
-weights were all drawn with standard deviation `1`, each output would be a sum
-of `m = in_features` random weighted terms. Wider layers would then start with
-larger values purely because they have more inputs.
+Initialization is the rule that chooses a layer's trainable starting values
+before training sees any data. Those values will be changed, but their
+initial scale determines the scale of the first activations and gradients. A
+poor scale can make a signal shrink or grow at every layer before learning has
+had a chance to correct it.
 
-To see the scale, assume for the moment that the input features are independent,
-centred, and have variance $1$, and that the weights are independent with mean
-$0$ and variance $\sigma^2$. Ignoring the bias, one output is
+For example, if the weights were all drawn with standard deviation `1`, each
+output would be a sum of `m = in_features` random weighted terms. Wider layers
+would then start with larger values purely because they have more inputs.
+
+### Fan-in Normal Initialization
+
+`initializers.fan_in_normal`, the default for `Linear`, draws each weight from
+a normal distribution with mean $0$ and standard deviation
+
+$$
+\sigma = \frac{1}{\sqrt{\texttt{in_features}}}.
+$$
+
+Its weight variance is therefore
+
+$$
+\operatorname{Var}(W_{ij}) = \sigma^2
+= \frac{1}{\texttt{in_features}}.
+$$
+
+Assume the input features are independent and centred. Ignoring the bias, one
+output is
 
 $$
 z_j = \sum_{i=1}^{m} x_i W_{ij}.
@@ -75,24 +95,72 @@ $$
 The independent terms add their variances:
 
 $$
+\begin{aligned}
 \operatorname{Var}(z_j)
-= \sum_{i=1}^{m}\operatorname{Var}(x_i W_{ij})
-= m\sigma^2.
+&= \texttt{in_features}\,\operatorname{Var}(x_i)\,\operatorname{Var}(W_{ij}) \\
+&= \operatorname{Var}(x_i).
+\end{aligned}
 $$
 
-We want the output variance to remain roughly $1$, like the input variance.
-Setting $m\sigma^2 = 1$ gives
+So this initializer preserves the forward scale. The backward calculation has
+the same form. If $G_j$ is an incoming gradient, then
+$\partial L / \partial x_i = \sum_j G_j W_{ij}$, giving
 
 $$
-\sigma = \frac{1}{\sqrt{m}}
-= \frac{1}{\sqrt{\texttt{in_features}}}.
+\operatorname{Var}\left(\frac{\partial L}{\partial x_i}\right)
+= \frac{\texttt{out_features}}{\texttt{in_features}}
+  \operatorname{Var}(G_j).
 $$
 
-This is the point of the formula: a wider layer gives each weight a smaller
-starting scale so that all of their contributions still add up to a signal of
-roughly the same size. Initialization is not about picking arbitrary small
-numbers; it gives the network values that are large enough to carry information
-forward, without becoming larger simply because a layer has more inputs.
+When the layer is wider or narrower than its input, fan-in normal does not
+preserve the backward scale. This is why Xavier initialization, below, uses
+both widths of the weight matrix.
+
+
+### Xavier Uniform Initialization
+
+`initializers.xavier_uniform` uses both widths of the weight matrix. It draws
+each weight from $U(-a, a)$, where
+
+$$
+a = \sqrt{\frac{6}{\texttt{in_features} + \texttt{out_features}}}.
+$$
+
+This balances the expected scale of values flowing forward with the scale of
+gradients flowing backward.
+
+For a uniform distribution $U(-a, a)$, the weight variance is
+
+$$
+\operatorname{Var}(W_{ij}) = \frac{a^2}{3}
+= \frac{2}{\texttt{in_features} + \texttt{out_features}}.
+$$
+
+Using the same assumptions as before, the output variance is therefore
+
+$$
+\begin{aligned}
+\operatorname{Var}(z_j)
+&= \texttt{in_features}\,\operatorname{Var}(x_i)\,\operatorname{Var}(W_{ij}) \\
+&= \frac{2\,\texttt{in_features}}
+         {\texttt{in_features} + \texttt{out_features}}
+   \operatorname{Var}(x_i).
+\end{aligned}
+$$
+
+The backward calculation mirrors this one. If $G_j$ is an incoming gradient,
+then $\partial L / \partial x_i = \sum_j G_j W_{ij}$, so
+
+$$
+\operatorname{Var}\left(\frac{\partial L}{\partial x_i}\right)
+= \frac{2\,\texttt{out_features}}
+       {\texttt{in_features} + \texttt{out_features}}
+  \operatorname{Var}(G_j).
+$$
+
+When the two widths are equal, both factors are $1$: the layer preserves the
+scale of both activations and gradients. When they differ, Xavier initialization
+is a compromise between the forward and backward scales.
 
 ## `Module` gives layers a common interface
 
