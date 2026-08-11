@@ -6,6 +6,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from ._module import Module
+from .initializers import WeightInitializer, fan_in_normal
 from .._leaf import Leaf
 
 
@@ -22,16 +23,20 @@ class Linear(Module):
         The generator used to initialize ``weight``. When omitted, a fresh
         generator is created. Inputs keep any leading batch axes; only their
         final axis is transformed.
+    initializer : WeightInitializer, optional
+        The function used to initialize ``weight``. It receives the random
+        generator, input width, and output width.
     """
 
-    def __init__(self, in_features: int, out_features: int, rng: Optional[np.random.Generator] = None):
+    def __init__(self, in_features: int, out_features: int, *,
+                 rng: Optional[np.random.Generator] = None, initializer: WeightInitializer = fan_in_normal):
         if in_features < 1 or out_features < 1:
             raise ValueError("in_features and out_features must be positive")
 
         rng = np.random.default_rng() if rng is None else rng
         self.in_features: int = in_features
         self.out_features: int = out_features
-        self.weight: Leaf = Leaf(rng.normal(scale=in_features ** -0.5, size=(in_features, out_features)))
+        self.weight: Leaf = Leaf(initializer(rng, in_features, out_features))
         self.bias: Leaf = Leaf(np.zeros(out_features))
 
     def forward(self, inputs: Leaf | ArrayLike) -> Leaf:

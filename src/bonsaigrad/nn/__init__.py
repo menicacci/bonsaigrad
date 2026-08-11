@@ -6,4 +6,4 @@ from ._loss import CrossEntropyLoss, MSELoss
 from ._module import Module
 from ._sequential import Sequential
 
-__all__ = ["CrossEntropyLoss", "Linear", "MSELoss", "Module", "ReLU", "Sequential", "Sigmoid", "Tanh"]
+__all__ = ["CrossEntropyLoss", "Linear", "MSELoss", "Module", "ReLU", "Sequential", "Sigmoid", "Tanh", "initializers"]
