@@ -104,12 +104,19 @@ $$
 
 So this initializer preserves the forward scale. The backward calculation has
 the same form. If $G_j$ is an incoming gradient, then
-$\partial L / \partial x_i = \sum_j G_j W_{ij}$, giving
+$\partial L / \partial x_i = \sum_j G_j W_{ij}$. Assuming the gradients and
+weights are independent and centred, the independent terms again add their
+variances:
 
 $$
+\begin{aligned}
 \operatorname{Var}\left(\frac{\partial L}{\partial x_i}\right)
-= \frac{\texttt{out_features}}{\texttt{in_features}}
-  \operatorname{Var}(G_j).
+&= \sum_{j=1}^{\texttt{out_features}}
+   \operatorname{Var}(G_j W_{ij}) \\
+&= \texttt{out_features}\,\operatorname{Var}(G_j)\,\operatorname{Var}(W_{ij}) \\
+&= \frac{\texttt{out_features}}{\texttt{in_features}}
+   \operatorname{Var}(G_j).
+\end{aligned}
 $$
 
 When the layer is wider or narrower than its input, fan-in normal does not
