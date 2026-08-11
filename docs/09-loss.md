@@ -149,10 +149,21 @@ group.
 
 ## Cross-Entropy Loss
 
-A classifier does not directly output probabilities. It outputs one unrestricted
-number for each class, called a **logit**. A larger logit means the model considers
-that class more likely, but logits can be positive or negative and do not need to
-add up to `1`.
+A **classifier** chooses one answer from a fixed set. Given a photo, for example,
+it might choose among `cat`, `dog`, and `tree`. Its raw output is one score for
+each possible answer; the answer with the largest score is its choice.
+
+Choosing the largest score is enough to make a decision, but it does not say how
+confident that decision is. Scores `[2.0, 2.1, 1.9]` and `[2.0, 8.0, 1.0]` both
+choose the second answer, but the first is uncertain while the second is very
+confident. If the first answer was correct, the confident mistake should receive
+a much larger correction during training.
+
+Softmax turns the scores into probabilities so we can measure that confidence:
+the probability of the correct answer tells us how good, or how confidently
+wrong, the prediction was. The raw unrestricted scores are called **logits**. A
+larger logit means the model considers that class more likely, but logits can be
+positive or negative and do not need to add up to `1`.
 
 For one example with $C$ classes, write the logits as
 
