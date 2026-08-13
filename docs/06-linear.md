@@ -72,17 +72,8 @@ would then start with larger values purely because they have more inputs.
 ### Fan-in Normal Initialization
 
 `initializers.fan_in_normal`, the default for `Linear`, draws each weight from
-a normal distribution with mean $0$ and standard deviation
-
-$$
-\sigma = \frac{1}{\sqrt{\texttt{inFeatures}}}.
-$$
-
-Its weight variance is therefore
-
-$$
-\mathrm{Var}(W_{ij}) = \sigma^2 = \frac{1}{\texttt{inFeatures}}.
-$$
+a mean-zero normal distribution. Its standard deviation is chosen to preserve
+the scale of values flowing forward through the layer.
 
 Assume the input features are independent and centred. Ignoring the bias, one
 output is
@@ -96,15 +87,28 @@ The independent terms add their variances:
 $$
 \begin{aligned}
 \mathrm{Var}(z_j)
-&= \texttt{inFeatures}\mathrm{Var}(x_i)\mathrm{Var}(W_{ij}) \\
-&= \mathrm{Var}(x_i).
+&= \texttt{inFeatures}\mathrm{Var}(x_i)\mathrm{Var}(W_{ij}).
 \end{aligned}
 $$
 
-So this initializer preserves the forward scale. The backward calculation has
-the same form. If $G_j$ is an incoming gradient, then
-$\partial L / \partial x_i = \sum_j G_j W_{ij}$. Assuming the gradients and
-weights are independent and centred, the independent terms again add their
+To preserve the forward scale, we want this to equal
+$\mathrm{Var}(x_i)$. Matching the coefficient of $\mathrm{Var}(x_i)$ to $1$
+leaves the required weight variance:
+
+$$
+\mathrm{Var}(W_{ij}) = \frac{1}{\texttt{inFeatures}}.
+$$
+
+For a normal distribution, the standard deviation is the square root of the
+variance, so the initializer uses
+
+$$
+\sigma = \frac{1}{\sqrt{\texttt{inFeatures}}}.
+$$
+
+The backward calculation has the same form. If $G_j$ is an incoming gradient,
+then $\partial L / \partial x_i = \sum_j G_j W_{ij}$. Assuming the gradients
+and weights are independent and centred, the independent terms again add their
 variances:
 
 $$
@@ -135,10 +139,23 @@ $$
 This balances the expected scale of values flowing forward with the scale of
 gradients flowing backward.
 
-For a uniform distribution $U(-a, a)$, the weight variance is
+For a uniform distribution over an interval of width $2a$, the density is
+$1 / (2a)$. The interval is symmetric around zero, so its mean is zero and the
+variance is its expected squared value:
 
 $$
-\mathrm{Var}(W_{ij}) = \frac{a^2}{3}
+\begin{aligned}
+\mathrm{Var}(W_{ij})
+&= \frac{1}{2a}\int_{-a}^{a} w^2 dw \\
+&= \frac{a^2}{3}.
+\end{aligned}
+$$
+
+Substituting Xavier's choice of $a$ gives
+
+$$
+\mathrm{Var}(W_{ij})
+= \frac{a^2}{3}
 = \frac{2}{\texttt{inFeatures} + \texttt{outFeatures}}.
 $$
 
