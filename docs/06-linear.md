@@ -59,14 +59,24 @@ $$
 
 ### Initialization
 
-Before training starts, the scale of the random weights matters. If the
-weights were all drawn with standard deviation `1`, each output would be a sum
-of `m = in_features` random weighted terms. Wider layers would then start with
-larger values purely because they have more inputs.
+Initialization is the rule that chooses a layer's trainable starting values
+before training sees any data. Those values will be changed, but their
+initial scale determines the scale of the first activations and gradients. A
+poor scale can make a signal shrink or grow at every layer before learning has
+had a chance to correct it.
 
-To see the scale, assume for the moment that the input features are independent,
-centred, and have variance $1$, and that the weights are independent with mean
-$0$ and variance $\sigma^2$. Ignoring the bias, one output is
+For example, if the weights were all drawn with standard deviation `1`, each
+output would be a sum of `m = in_features` random weighted terms. Wider layers
+would then start with larger values purely because they have more inputs.
+
+### Fan-in Normal Initialization
+
+`initializers.fan_in_normal`, the default for `Linear`, draws each weight from
+a mean-zero normal distribution. Its standard deviation is chosen to preserve
+the scale of values flowing forward through the layer.
+
+Assume the input features are independent and centred. Ignoring the bias, one
+output is
 
 $$
 z_j = \sum_{i=1}^{m} x_i W_{ij}.
@@ -75,24 +85,105 @@ $$
 The independent terms add their variances:
 
 $$
-\operatorname{Var}(z_j)
-= \sum_{i=1}^{m}\operatorname{Var}(x_i W_{ij})
-= m\sigma^2.
+\begin{aligned}
+\mathrm{Var}(z_j)
+&= \texttt{inFeatures}\mathrm{Var}(x_i)\mathrm{Var}(W_{ij}).
+\end{aligned}
 $$
 
-We want the output variance to remain roughly $1$, like the input variance.
-Setting $m\sigma^2 = 1$ gives
+To preserve the forward scale, we want this to equal
+$\mathrm{Var}(x_i)$. Matching the coefficient of $\mathrm{Var}(x_i)$ to $1$
+leaves the required weight variance:
 
 $$
-\sigma = \frac{1}{\sqrt{m}}
-= \frac{1}{\sqrt{\texttt{in_features}}}.
+\mathrm{Var}(W_{ij}) = \frac{1}{\texttt{inFeatures}}.
 $$
 
-This is the point of the formula: a wider layer gives each weight a smaller
-starting scale so that all of their contributions still add up to a signal of
-roughly the same size. Initialization is not about picking arbitrary small
-numbers; it gives the network values that are large enough to carry information
-forward, without becoming larger simply because a layer has more inputs.
+For a normal distribution, the standard deviation is the square root of the
+variance, so the initializer uses
+
+$$
+\sigma = \frac{1}{\sqrt{\texttt{inFeatures}}}.
+$$
+
+The backward calculation has the same form. If $G_j$ is an incoming gradient,
+then $\partial L / \partial x_i = \sum_j G_j W_{ij}$. Assuming the gradients
+and weights are independent and centred, the independent terms again add their
+variances:
+
+$$
+\begin{aligned}
+\mathrm{Var}\left(\frac{\partial L}{\partial x_i}\right)
+&= \sum_{j=1}^{\texttt{outFeatures}}
+   \mathrm{Var}(G_j W_{ij}) \\
+&= \texttt{outFeatures}\mathrm{Var}(G_j)\mathrm{Var}(W_{ij}) \\
+&= \frac{\texttt{outFeatures}}{\texttt{inFeatures}}
+   \mathrm{Var}(G_j).
+\end{aligned}
+$$
+
+When the layer is wider or narrower than its input, fan-in normal does not
+preserve the backward scale. This is why Xavier initialization, below, uses
+both widths of the weight matrix.
+
+
+### Xavier Uniform Initialization
+
+`initializers.xavier_uniform` uses both widths of the weight matrix. It draws
+each weight from $U(-a, a)$, where
+
+$$
+a = \sqrt{\frac{6}{\texttt{inFeatures} + \texttt{outFeatures}}}.
+$$
+
+This balances the expected scale of values flowing forward with the scale of
+gradients flowing backward.
+
+For a uniform distribution over an interval of width $2a$, the density is
+$1 / (2a)$. The interval is symmetric around zero, so its mean is zero and the
+variance is its expected squared value:
+
+$$
+\begin{aligned}
+\mathrm{Var}(W_{ij})
+&= \frac{1}{2a}\int_{-a}^{a} w^2 dw \\
+&= \frac{a^2}{3}.
+\end{aligned}
+$$
+
+Substituting Xavier's choice of $a$ gives
+
+$$
+\mathrm{Var}(W_{ij})
+= \frac{a^2}{3}
+= \frac{2}{\texttt{inFeatures} + \texttt{outFeatures}}.
+$$
+
+Using the same assumptions as before, the output variance is therefore
+
+$$
+\begin{aligned}
+\mathrm{Var}(z_j)
+&= \texttt{inFeatures}\mathrm{Var}(x_i)\mathrm{Var}(W_{ij}) \\
+&= \frac{2\texttt{inFeatures}}
+         {\texttt{inFeatures} + \texttt{outFeatures}}
+   \mathrm{Var}(x_i).
+\end{aligned}
+$$
+
+The backward calculation mirrors this one. If $G_j$ is an incoming gradient,
+then $\partial L / \partial x_i = \sum_j G_j W_{ij}$, so
+
+$$
+\mathrm{Var}\left(\frac{\partial L}{\partial x_i}\right)
+= \frac{2\texttt{outFeatures}}
+       {\texttt{inFeatures} + \texttt{outFeatures}}
+  \mathrm{Var}(G_j).
+$$
+
+When the two widths are equal, both factors are $1$: the layer preserves the
+scale of both activations and gradients. When they differ, Xavier initialization
+is a compromise between the forward and backward scales.
 
 ## `Module` gives layers a common interface
 

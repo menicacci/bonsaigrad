@@ -3,15 +3,15 @@ import unittest
 import numpy as np
 
 from bonsaigrad import Leaf
-from bonsaigrad.nn import Linear, Module
+from bonsaigrad.nn import Linear, Module, initializers
 
 
 class TestLinear(unittest.TestCase):
 
     def test_initializes_trainable_weight_and_bias(self):
         default = Linear(2, 3)
-        first = Linear(2, 3, np.random.default_rng(7))
-        second = Linear(2, 3, np.random.default_rng(7))
+        first = Linear(2, 3, rng=np.random.default_rng(7))
+        second = Linear(2, 3, rng=np.random.default_rng(7))
 
         self.assertEqual(default.weight.data.shape, (2, 3))
         self.assertEqual(default.bias.data.shape, (3,))
@@ -23,7 +23,7 @@ class TestLinear(unittest.TestCase):
         np.testing.assert_array_equal(first.bias.data, np.zeros(3))
 
     def test_transforms_the_last_axis_for_a_batch(self):
-        layer = Linear(2, 3, np.random.default_rng(0))
+        layer = Linear(2, 3, rng=np.random.default_rng(0))
         layer.weight.data[:] = [[1.0, -1.0, 0.5], [0.5, 1.0, -1.0]]
         layer.bias.data[:] = [0.0, 0.5, -0.5]
         inputs = [[2.0, 4.0], [-1.0, 3.0]]
@@ -36,7 +36,7 @@ class TestLinear(unittest.TestCase):
         np.testing.assert_array_equal(repeated.data[0], outputs.data)
 
     def test_gradients_accumulate_from_every_example(self):
-        layer = Linear(2, 3, np.random.default_rng(0))
+        layer = Linear(2, 3, rng=np.random.default_rng(0))
         layer.weight.data[:] = [[1.0, -1.0, 0.5], [0.5, 1.0, -1.0]]
         inputs = Leaf([[2.0, 4.0], [-1.0, 3.0]])
 
@@ -47,7 +47,7 @@ class TestLinear(unittest.TestCase):
         np.testing.assert_array_equal(layer.bias.grad, [2.0, 2.0, 2.0])
 
     def test_rejects_inputs_without_the_expected_feature_axis(self):
-        layer = Linear(2, 3, np.random.default_rng(0))
+        layer = Linear(2, 3, rng=np.random.default_rng(0))
 
         with self.assertRaises(ValueError):
             layer([1.0, 2.0])
@@ -56,6 +56,28 @@ class TestLinear(unittest.TestCase):
 
     def test_requires_positive_feature_counts(self):
         with self.assertRaises(ValueError):
-            Linear(0, 3, np.random.default_rng(0))
+            Linear(0, 3, rng=np.random.default_rng(0))
         with self.assertRaises(ValueError):
-            Linear(2, 0, np.random.default_rng(0))
+            Linear(2, 0, rng=np.random.default_rng(0))
+
+    def test_uses_xavier_uniform_initialization(self):
+        rng = np.random.default_rng(7)
+        expected_rng = np.random.default_rng(7)
+        bound = np.sqrt(6.0 / (2 + 3))
+
+        layer = Linear(2, 3, rng=rng, initializer=initializers.xavier_uniform)
+        expected = expected_rng.uniform(-bound, bound, size=(2, 3))
+
+        np.testing.assert_array_equal(layer.weight.data, expected)
+
+    def test_passes_layer_dimensions_to_a_custom_initializer(self):
+        rng = np.random.default_rng(7)
+
+        def initializer(received_rng, fan_in, fan_out):
+            self.assertIs(received_rng, rng)
+            self.assertEqual((fan_in, fan_out), (2, 3))
+            return np.full((fan_in, fan_out), 0.25)
+
+        layer = Linear(2, 3, rng=rng, initializer=initializer)
+
+        np.testing.assert_array_equal(layer.weight.data, np.full((2, 3), 0.25))
