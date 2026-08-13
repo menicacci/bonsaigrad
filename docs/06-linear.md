@@ -81,7 +81,7 @@ $$
 Its weight variance is therefore
 
 $$
-\operatorname{Var}(W_{ij}) = \sigma^2 = \frac{1}{\texttt{inFeatures}}.
+\mathrm{Var}(W_{ij}) = \sigma^2 = \frac{1}{\texttt{inFeatures}}.
 $$
 
 Assume the input features are independent and centred. Ignoring the bias, one
@@ -95,9 +95,9 @@ The independent terms add their variances:
 
 $$
 \begin{aligned}
-\operatorname{Var}(z_j)
-&= \texttt{inFeatures}\,\operatorname{Var}(x_i)\,\operatorname{Var}(W_{ij}) \\
-&= \operatorname{Var}(x_i).
+\mathrm{Var}(z_j)
+&= \texttt{inFeatures}\,\mathrm{Var}(x_i)\,\mathrm{Var}(W_{ij}) \\
+&= \mathrm{Var}(x_i).
 \end{aligned}
 $$
 
@@ -109,12 +109,12 @@ variances:
 
 $$
 \begin{aligned}
-\operatorname{Var}\left(\frac{\partial L}{\partial x_i}\right)
+\mathrm{Var}\left(\frac{\partial L}{\partial x_i}\right)
 &= \sum_{j=1}^{\texttt{outFeatures}}
-   \operatorname{Var}(G_j W_{ij}) \\
-&= \texttt{outFeatures}\,\operatorname{Var}(G_j)\,\operatorname{Var}(W_{ij}) \\
+   \mathrm{Var}(G_j W_{ij}) \\
+&= \texttt{outFeatures}\,\mathrm{Var}(G_j)\,\mathrm{Var}(W_{ij}) \\
 &= \frac{\texttt{outFeatures}}{\texttt{inFeatures}}
-   \operatorname{Var}(G_j).
+   \mathrm{Var}(G_j).
 \end{aligned}
 $$
 
@@ -138,7 +138,7 @@ gradients flowing backward.
 For a uniform distribution $U(-a, a)$, the weight variance is
 
 $$
-\operatorname{Var}(W_{ij}) = \frac{a^2}{3}
+\mathrm{Var}(W_{ij}) = \frac{a^2}{3}
 = \frac{2}{\texttt{inFeatures} + \texttt{outFeatures}}.
 $$
 
@@ -146,11 +146,11 @@ Using the same assumptions as before, the output variance is therefore
 
 $$
 \begin{aligned}
-\operatorname{Var}(z_j)
-&= \texttt{inFeatures}\,\operatorname{Var}(x_i)\,\operatorname{Var}(W_{ij}) \\
+\mathrm{Var}(z_j)
+&= \texttt{inFeatures}\,\mathrm{Var}(x_i)\,\mathrm{Var}(W_{ij}) \\
 &= \frac{2\,\texttt{inFeatures}}
          {\texttt{inFeatures} + \texttt{outFeatures}}
-   \operatorname{Var}(x_i).
+   \mathrm{Var}(x_i).
 \end{aligned}
 $$
 
@@ -158,10 +158,10 @@ The backward calculation mirrors this one. If $G_j$ is an incoming gradient,
 then $\partial L / \partial x_i = \sum_j G_j W_{ij}$, so
 
 $$
-\operatorname{Var}\left(\frac{\partial L}{\partial x_i}\right)
+\mathrm{Var}\left(\frac{\partial L}{\partial x_i}\right)
 = \frac{2\,\texttt{outFeatures}}
        {\texttt{inFeatures} + \texttt{outFeatures}}
-  \operatorname{Var}(G_j).
+  \mathrm{Var}(G_j).
 $$
 
 When the two widths are equal, both factors are $1$: the layer preserves the
