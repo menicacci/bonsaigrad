@@ -75,14 +75,13 @@ would then start with larger values purely because they have more inputs.
 a normal distribution with mean $0$ and standard deviation
 
 $$
-\sigma = \frac{1}{\sqrt{\texttt{in_features}}}.
+\sigma = \frac{1}{\sqrt{\texttt{inFeatures}}}.
 $$
 
 Its weight variance is therefore
 
 $$
-\operatorname{Var}(W_{ij}) = \sigma^2
-= \frac{1}{\texttt{in_features}}.
+\operatorname{Var}(W_{ij}) = \sigma^2 = \frac{1}{\texttt{inFeatures}}.
 $$
 
 Assume the input features are independent and centred. Ignoring the bias, one
@@ -97,7 +96,7 @@ The independent terms add their variances:
 $$
 \begin{aligned}
 \operatorname{Var}(z_j)
-&= \texttt{in_features}\,\operatorname{Var}(x_i)\,\operatorname{Var}(W_{ij}) \\
+&= \texttt{inFeatures}\,\operatorname{Var}(x_i)\,\operatorname{Var}(W_{ij}) \\
 &= \operatorname{Var}(x_i).
 \end{aligned}
 $$
@@ -111,10 +110,10 @@ variances:
 $$
 \begin{aligned}
 \operatorname{Var}\left(\frac{\partial L}{\partial x_i}\right)
-&= \sum_{j=1}^{\texttt{out_features}}
+&= \sum_{j=1}^{\texttt{outFeatures}}
    \operatorname{Var}(G_j W_{ij}) \\
-&= \texttt{out_features}\,\operatorname{Var}(G_j)\,\operatorname{Var}(W_{ij}) \\
-&= \frac{\texttt{out_features}}{\texttt{in_features}}
+&= \texttt{outFeatures}\,\operatorname{Var}(G_j)\,\operatorname{Var}(W_{ij}) \\
+&= \frac{\texttt{outFeatures}}{\texttt{inFeatures}}
    \operatorname{Var}(G_j).
 \end{aligned}
 $$
@@ -130,7 +129,7 @@ both widths of the weight matrix.
 each weight from $U(-a, a)$, where
 
 $$
-a = \sqrt{\frac{6}{\texttt{in_features} + \texttt{out_features}}}.
+a = \sqrt{\frac{6}{\texttt{inFeatures} + \texttt{outFeatures}}}.
 $$
 
 This balances the expected scale of values flowing forward with the scale of
@@ -140,7 +139,7 @@ For a uniform distribution $U(-a, a)$, the weight variance is
 
 $$
 \operatorname{Var}(W_{ij}) = \frac{a^2}{3}
-= \frac{2}{\texttt{in_features} + \texttt{out_features}}.
+= \frac{2}{\texttt{inFeatures} + \texttt{outFeatures}}.
 $$
 
 Using the same assumptions as before, the output variance is therefore
@@ -148,9 +147,9 @@ Using the same assumptions as before, the output variance is therefore
 $$
 \begin{aligned}
 \operatorname{Var}(z_j)
-&= \texttt{in_features}\,\operatorname{Var}(x_i)\,\operatorname{Var}(W_{ij}) \\
-&= \frac{2\,\texttt{in_features}}
-         {\texttt{in_features} + \texttt{out_features}}
+&= \texttt{inFeatures}\,\operatorname{Var}(x_i)\,\operatorname{Var}(W_{ij}) \\
+&= \frac{2\,\texttt{inFeatures}}
+         {\texttt{inFeatures} + \texttt{outFeatures}}
    \operatorname{Var}(x_i).
 \end{aligned}
 $$
@@ -160,8 +159,8 @@ then $\partial L / \partial x_i = \sum_j G_j W_{ij}$, so
 
 $$
 \operatorname{Var}\left(\frac{\partial L}{\partial x_i}\right)
-= \frac{2\,\texttt{out_features}}
-       {\texttt{in_features} + \texttt{out_features}}
+= \frac{2\,\texttt{outFeatures}}
+       {\texttt{inFeatures} + \texttt{outFeatures}}
   \operatorname{Var}(G_j).
 $$
 
