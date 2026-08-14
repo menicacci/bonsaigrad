@@ -10,6 +10,7 @@ from .._leaf import Leaf
 
 class Sequential(Module):
     def __init__(self, *modules: Module):
+        super().__init__()
         if not all(isinstance(module, Module) for module in modules):
             raise TypeError("Sequential accepts Module instances only")
 
@@ -24,3 +25,15 @@ class Sequential(Module):
 
     def parameters(self) -> Tuple[Leaf, ...]:
         return tuple(dict.fromkeys(p for m in self.modules for p in m.parameters()))
+
+    def train(self) -> Sequential:
+        super().train()
+        for module in self.modules:
+            module.train()
+        return self
+
+    def eval(self) -> Sequential:
+        super().eval()
+        for module in self.modules:
+            module.eval()
+        return self
