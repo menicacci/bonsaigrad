@@ -60,3 +60,19 @@ class TestSequential(unittest.TestCase):
     def test_rejects_non_modules(self):
         with self.assertRaises(TypeError):
             Sequential(Linear(2, 2, rng=np.random.default_rng(0)), object())
+
+    def test_training_mode_propagates_to_every_child(self):
+        first = Linear(2, 2, rng=np.random.default_rng(0))
+        nested = Sequential(Tanh())
+        model = Sequential(first, nested)
+
+        self.assertIs(model.eval(), model)
+        self.assertFalse(model.training)
+        self.assertFalse(first.training)
+        self.assertFalse(nested.training)
+        self.assertFalse(nested.modules[0].training)
+        self.assertIs(model.train(), model)
+        self.assertTrue(model.training)
+        self.assertTrue(first.training)
+        self.assertTrue(nested.training)
+        self.assertTrue(nested.modules[0].training)

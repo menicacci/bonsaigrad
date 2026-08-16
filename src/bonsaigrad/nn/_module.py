@@ -9,6 +9,11 @@ from .._leaf import Leaf
 class Module(ABC):
     """Base class for a trainable neural-network component."""
 
+    training: bool = True
+
+    def __init__(self) -> None:
+        self.training: bool = True
+
     def __call__(self, *args: Any, **kwargs: Any) -> Leaf:
         return self.forward(*args, **kwargs)
 
@@ -18,3 +23,11 @@ class Module(ABC):
 
     def parameters(self) -> Tuple[Leaf, ...]:
         return ()
+
+    def train(self) -> Module:
+        self.training = True
+        return self
+
+    def eval(self) -> Module:
+        self.training = False
+        return self
