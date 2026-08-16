@@ -115,3 +115,21 @@ optimizer.step()
 the new gradients, and `step()` changes the parameter data using them. Keeping
 these jobs separate makes the training loop explicit: first measure the error,
 then find its gradients, then update the model.
+
+---
+
+For a small experiment, checkout [11_learn_surface.py](examples/11_learn_surface.py) 
+to train two identical networks on a smooth two-dimensional surface and compare
+SGD with Adam on hold-out data. 
+
+> Run with `python examples/11_learn_surface.py`
+
+The target is nonlinear, so the model encounters
+regions with different curvature and gradient scales as it learns. With the
+example's fixed SGD learning rate, a step that is useful in a gentle region can
+be too large in a steep one: its updates eventually overshoot and the loss
+grows rather than falls. Adam keeps a moving estimate of each coordinate's
+gradient scale and reduces steps where that scale is large, while its first
+moment smooths noisy changes in direction. In this setup, those two adjustments
+keep Adam's updates stable and let it continue reducing both training and
+hold-out loss.
