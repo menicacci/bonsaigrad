@@ -30,6 +30,7 @@ class Linear(Module):
 
     def __init__(self, in_features: int, out_features: int, rng: Optional[np.random.Generator] = None, *,
                  initializer: WeightInitializer = fan_in_normal):
+        super().__init__()
         if in_features < 1 or out_features < 1:
             raise ValueError("in_features and out_features must be positive")
 
