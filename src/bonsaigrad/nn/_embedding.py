@@ -11,8 +11,6 @@ from .._leaf import Leaf
 
 
 class Embedding(Module):
-    """A trainable lookup table for integer indices."""
-
     def __init__(self, num_embeddings: int, embedding_dim: int, rng: Optional[np.random.Generator] = None, *,
                  initializer: WeightInitializer = embedding_normal):
         super().__init__()
