@@ -5,26 +5,18 @@ from typing import Tuple
 import numpy as np
 from numpy.typing import ArrayLike
 
-from .._module import Module
+from ._normalization import _Normalization
 from ..._leaf import Leaf
 
 
-class BatchNorm1d(Module):
+class BatchNorm1d(_Normalization):
 
     def __init__(self, num_features: int, eps: float = 1e-5, momentum: float = 0.1):
-        super().__init__()
-        if num_features < 1:
-            raise ValueError("num_features must be positive")
-        if eps <= 0.0:
-            raise ValueError("eps must be positive")
+        super().__init__(num_features=num_features, eps=eps)
         if not 0.0 <= momentum <= 1.0:
             raise ValueError("momentum must be between 0 and 1")
 
-        self.num_features: int = num_features
-        self.eps: float = eps
         self.momentum: float = momentum
-        self.gamma: Leaf = Leaf(np.ones(num_features))
-        self.beta: Leaf = Leaf(np.zeros(num_features))
         self.running_mean: np.ndarray = np.zeros(num_features)
         self.running_var: np.ndarray = np.ones(num_features)
 
@@ -47,6 +39,3 @@ class BatchNorm1d(Module):
 
         normalized = (inputs - mean) / (variance + self.eps) ** 0.5
         return self.gamma * normalized + self.beta
-
-    def parameters(self) -> Tuple[Leaf, ...]:
-        return self.gamma, self.beta
