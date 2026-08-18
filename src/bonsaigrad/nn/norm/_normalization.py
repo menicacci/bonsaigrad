@@ -7,6 +7,7 @@ from ..._leaf import Leaf
 
 
 class _Normalization(Module, ABC):
+
     def __init__(self, num_features: int, eps: float):
         super().__init__()
         if num_features < 1:
