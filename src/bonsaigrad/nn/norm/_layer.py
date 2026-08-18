@@ -1,3 +1,6 @@
+from typing import Tuple
+
+import numpy as np
 from numpy.typing import ArrayLike
 
 from bonsaigrad import Leaf
@@ -15,6 +18,8 @@ class LayerNorm(Module):
 
         self.num_features: int = num_features
         self.eps: float = eps
+        self.gamma: Leaf = Leaf(np.ones(num_features))
+        self.beta: Leaf = Leaf(np.zeros(num_features))
 
     def forward(self, inputs: Leaf | ArrayLike) -> Leaf:
         inputs = inputs if isinstance(inputs, Leaf) else Leaf(inputs)
@@ -25,4 +30,8 @@ class LayerNorm(Module):
 
         mean = inputs.mean(-1, keepdims=True)
         variance = ((inputs - mean) ** 2).mean(-1, keepdims=True)
-        return (inputs - mean) / (variance + self.eps) ** 0.5
+        normalized = (inputs - mean) / (variance + self.eps) ** 0.5
+        return self.gamma * normalized + self.beta
+
+    def parameters(self) -> Tuple[Leaf, ...]:
+        return self.gamma, self.beta

@@ -28,6 +28,15 @@ $$
 \hat{z}_i = \frac{z_i-\mu}{\sqrt{v+\varepsilon}}.
 $$
 
+The paper then restores flexibility with one learned gain and bias per feature:
+
+$$
+y_i = \gamma_i\hat{z}_i + \beta_i.
+$$
+
+`LayerNorm` does the same. `gamma` starts at `1` and `beta` at `0`, preserving
+the normalized values initially while allowing training to choose their scale
+and centre.
 
 >Suppose a preceding layer makes every feature in one example larger by the
 same amount, or scales the whole feature vector. Without normalization, the
