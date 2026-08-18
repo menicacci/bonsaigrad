@@ -12,7 +12,7 @@ class _Normalization(Module, ABC):
         super().__init__()
         if num_features < 1:
             raise ValueError("num_features must be positive")
-        if eps <= 0.0:
+        if not np.isfinite(eps) or eps <= 0.0:
             raise ValueError("eps must be positive")
 
         self.num_features: int = num_features
