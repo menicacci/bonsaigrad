@@ -133,6 +133,15 @@ class Leaf:
         out._backward = _backward
         return out
 
+    def reshape(self, *shape: int) -> Leaf:
+        out = Leaf(self.data.reshape(*shape), (self,), "reshape")
+
+        def _backward() -> None:
+            self.grad += out.grad.reshape(self.data.shape)
+
+        out._backward = _backward
+        return out
+
     def sum(self, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Leaf:
         out = Leaf(self.data.sum(axis=axis, keepdims=keepdims), (self,), "sum")
 

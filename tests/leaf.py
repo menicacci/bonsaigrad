@@ -44,6 +44,14 @@ class TestLeaf(unittest.TestCase):
     def test_exp(self):
         self.assertAlmostEqual(float(Leaf(1.0).exp().data), np.e)
 
+    def test_reshape_rearranges_values_and_gradients(self):
+        values = Leaf([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]])
+        reshaped = values.reshape(3, 2)
+        np.testing.assert_array_equal(reshaped.data, [[0.0, 1.0], [2.0, 3.0], [4.0, 5.0]])
+
+        (reshaped * [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]).wire()
+        np.testing.assert_array_equal(values.grad, [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+
     def test_derived_ops_desugar(self):
         # `-`/`/` add no primitives: they are built from `+`, `*` and `**`.
         self.assertEqual((Leaf(5.0) - Leaf(3.0))._op, "+")
