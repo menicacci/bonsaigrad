@@ -29,8 +29,7 @@ env/
 # Notebooks
 .ipynb_checkpoints/
 
-# Model checkpoints / data (built during training)
+# Model checkpoints (built during training)
 *.npz
 *.npy
 checkpoints/
-data/

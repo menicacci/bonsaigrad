@@ -26,7 +26,8 @@ notebooks = [
 version = { attr = "bonsaigrad.__version__" }
 
 [tool.setuptools]
-package-dir = { "" = "src" }
+package-dir = { "" = "src", "models" = "models" }
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src", "."]
+include = ["bonsaigrad", "bonsaigrad.*", "models", "models.*"]
