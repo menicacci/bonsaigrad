@@ -101,6 +101,18 @@ There are **two matrix multiplications**, with softmax between them:
 Softmax normalizes how much each source token contributes. Applying it after
 $AV$ would instead normalize the output's feature coordinates.
 
+### When do we need a mask?
+
+In the original Transformer paper, the encoder
+can attend to the whole input: a translation model is given the complete source
+sentence. The decoder is different. It predicts the output one token at a time,
+so letting a position see later output tokens would give away what it is meant
+to predict. A **causal mask** hides those later positions.
+
+Set `causal=False` when the whole sequence is already available, as in the
+Transformer encoder.
+
+
 ## Multi-Head Self-Attention
 
 One attention head produces one set of attention weights for the sequence.
