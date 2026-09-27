@@ -100,3 +100,20 @@ There are **two matrix multiplications**, with softmax between them:
 
 Softmax normalizes how much each source token contributes. Applying it after
 $AV$ would instead normalize the output's feature coordinates.
+
+## Multi-Head Self-Attention
+
+One attention head produces one set of attention weights for the sequence.
+**Multi-Head Self-Attention** runs several heads over the same input, each with
+its own learned queries, keys, and values. The heads can therefore learn
+different ways to relate tokens: one might draw on nearby context while another
+uses information from farther back. These roles are learned, not assigned.
+
+Each head produces a context vector for every token. We concatenate those
+vectors and use a learned linear projection to combine them into one output
+vector per token:
+
+$$
+Y = \operatorname{Linear}\!\left([\operatorname{head}_1(X)\;|\;\cdots\;|\;\operatorname{head}_H(X)]\right).
+$$
+
