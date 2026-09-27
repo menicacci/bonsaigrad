@@ -52,6 +52,24 @@ class TestLeaf(unittest.TestCase):
         (reshaped * [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]).wire()
         np.testing.assert_array_equal(values.grad, [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
 
+    def test_transpose_swaps_selected_axes_and_gradients(self):
+        values = Leaf(np.arange(12.0).reshape(2, 2, 3))
+        transposed = values.transpose(-2, -1)
+        np.testing.assert_array_equal(transposed.data, values.data.swapaxes(-2, -1))
+
+        weights = np.arange(12.0).reshape(2, 3, 2)
+        (transposed * weights).wire()
+        np.testing.assert_array_equal(values.grad, weights.swapaxes(-2, -1))
+
+    def test_transpose_accepts_axis_pair(self):
+        values = Leaf(np.arange(24.0).reshape(2, 3, 4))
+        transposed = values.transpose(0, 2)
+        np.testing.assert_array_equal(transposed.data, values.data.swapaxes(0, 2))
+
+        weights = np.arange(24.0).reshape(4, 3, 2)
+        (transposed * weights).wire()
+        np.testing.assert_array_equal(values.grad, weights.swapaxes(0, 2))
+
     def test_derived_ops_desugar(self):
         # `-`/`/` add no primitives: they are built from `+`, `*` and `**`.
         self.assertEqual((Leaf(5.0) - Leaf(3.0))._op, "+")

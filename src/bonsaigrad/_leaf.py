@@ -142,6 +142,15 @@ class Leaf:
         out._backward = _backward
         return out
 
+    def transpose(self, axis1: int, axis2: int) -> Leaf:
+        out = Leaf(self.data.swapaxes(axis1, axis2), (self,), "transpose")
+
+        def _backward() -> None:
+            self.grad += out.grad.swapaxes(axis1, axis2)
+
+        out._backward = _backward
+        return out
+
     def sum(self, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Leaf:
         out = Leaf(self.data.sum(axis=axis, keepdims=keepdims), (self,), "sum")
 
