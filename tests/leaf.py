@@ -50,6 +50,22 @@ class TestLeaf(unittest.TestCase):
         expected /= expected.sum()
         np.testing.assert_allclose(probabilities, expected)
 
+    def test_softmax_normalizes_each_matrix_row(self):
+        for shape in ((2, 3), (2, 2)):
+            with self.subTest(shape=shape):
+                values = np.arange(np.prod(shape), dtype=float).reshape(shape)
+                probabilities = Leaf(values).softmax(axis=-1).data
+                expected = np.exp(np.arange(shape[-1], dtype=float))
+                expected /= expected.sum()
+                self.assertEqual(probabilities.shape, shape)
+                np.testing.assert_allclose(probabilities, np.tile(expected, (shape[0], 1)))
+                np.testing.assert_allclose(probabilities.sum(axis=-1), np.ones(shape[0]))
+
+    def test_softmax_matrix_backward_matches_numerical_gradient(self):
+        values = np.arange(6.0).reshape(2, 3)
+        weights = np.array([[1.0, -2.0, 3.0], [-1.0, 4.0, 2.0]])
+        assert_grads(self, lambda x: x.softmax(axis=-1) * weights, [values])
+
     def test_reshape_rearranges_values_and_gradients(self):
         values = Leaf([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]])
         reshaped = values.reshape(3, 2)

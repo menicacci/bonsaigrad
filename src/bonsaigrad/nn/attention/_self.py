@@ -32,7 +32,7 @@ class SelfAttention(Module):
             allowed = np.tril(np.ones((T, T), dtype=bool))
             scores = scores + np.where(allowed, 0.0, -np.inf)
 
-        return scores.softmax(axis=-1, keepdims=True) @ self.V(inputs)
+        return scores.softmax(axis=-1) @ self.V(inputs)
 
     def parameters(self) -> Tuple[Leaf, ...]:
         return self.Q.parameters() + self.K.parameters() + self.V.parameters()
