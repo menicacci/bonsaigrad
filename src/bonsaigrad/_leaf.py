@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, Tuple, List, Set, Optional, Union
+from typing import Any, Tuple, List, Set, Optional, Union, Sequence
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -142,6 +142,15 @@ class Leaf:
         out._backward = _backward
         return out
 
+    def transpose(self, axis1: int, axis2: int) -> Leaf:
+        out = Leaf(self.data.swapaxes(axis1, axis2), (self,), "transpose")
+
+        def _backward() -> None:
+            self.grad += out.grad.swapaxes(axis1, axis2)
+
+        out._backward = _backward
+        return out
+
     def sum(self, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Leaf:
         out = Leaf(self.data.sum(axis=axis, keepdims=keepdims), (self,), "sum")
 
@@ -184,6 +193,9 @@ class Leaf:
 
         out._backward = _backward
         return out
+
+    def softmax(self, axis: Optional[Union[int, Tuple[int, ...]]] = None) -> Leaf:
+        return (self - self.logsumexp(axis=axis, keepdims=True)).exp()
 
     def __matmul__(self, other: Leaf | ArrayLike) -> Leaf:
         other: Leaf = self._wrap(other)
@@ -252,3 +264,18 @@ class Leaf:
 
     def __repr__(self) -> str:
         return f"Leaf(data={self.data}, grad={self.grad})"
+
+    @classmethod
+    def concat(cls, leaves: Sequence[Leaf], axis: int = -1) -> Leaf:
+        leaves: Tuple[Leaf, ...] = tuple(leaves)
+        out = cls(np.concatenate([leaf.data for leaf in leaves], axis=axis), leaves, "concat")
+
+        boundaries = np.cumsum([leaf.data.shape[axis] for leaf in leaves])[:-1]
+
+        def _backward() -> None:
+            gradients = np.split(out.grad, boundaries, axis=axis)
+            for leaf, grad in zip(leaves, gradients):
+                leaf.grad += grad
+
+        out._backward = _backward
+        return out

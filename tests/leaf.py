@@ -44,6 +44,28 @@ class TestLeaf(unittest.TestCase):
     def test_exp(self):
         self.assertAlmostEqual(float(Leaf(1.0).exp().data), np.e)
 
+    def test_softmax_stays_stable_and_sums_to_one(self):
+        probabilities = Leaf([1000.0, 1001.0, 1002.0]).softmax().data
+        expected = np.exp([-2.0, -1.0, 0.0])
+        expected /= expected.sum()
+        np.testing.assert_allclose(probabilities, expected)
+
+    def test_softmax_normalizes_each_matrix_row(self):
+        for shape in ((2, 3), (2, 2)):
+            with self.subTest(shape=shape):
+                values = np.arange(np.prod(shape), dtype=float).reshape(shape)
+                probabilities = Leaf(values).softmax(axis=-1).data
+                expected = np.exp(np.arange(shape[-1], dtype=float))
+                expected /= expected.sum()
+                self.assertEqual(probabilities.shape, shape)
+                np.testing.assert_allclose(probabilities, np.tile(expected, (shape[0], 1)))
+                np.testing.assert_allclose(probabilities.sum(axis=-1), np.ones(shape[0]))
+
+    def test_softmax_matrix_backward_matches_numerical_gradient(self):
+        values = np.arange(6.0).reshape(2, 3)
+        weights = np.array([[1.0, -2.0, 3.0], [-1.0, 4.0, 2.0]])
+        assert_grads(self, lambda x: x.softmax(axis=-1) * weights, [values])
+
     def test_reshape_rearranges_values_and_gradients(self):
         values = Leaf([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]])
         reshaped = values.reshape(3, 2)
@@ -51,6 +73,24 @@ class TestLeaf(unittest.TestCase):
 
         (reshaped * [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]).wire()
         np.testing.assert_array_equal(values.grad, [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+
+    def test_transpose_swaps_selected_axes_and_gradients(self):
+        values = Leaf(np.arange(12.0).reshape(2, 2, 3))
+        transposed = values.transpose(-2, -1)
+        np.testing.assert_array_equal(transposed.data, values.data.swapaxes(-2, -1))
+
+        weights = np.arange(12.0).reshape(2, 3, 2)
+        (transposed * weights).wire()
+        np.testing.assert_array_equal(values.grad, weights.swapaxes(-2, -1))
+
+    def test_transpose_accepts_axis_pair(self):
+        values = Leaf(np.arange(24.0).reshape(2, 3, 4))
+        transposed = values.transpose(0, 2)
+        np.testing.assert_array_equal(transposed.data, values.data.swapaxes(0, 2))
+
+        weights = np.arange(24.0).reshape(4, 3, 2)
+        (transposed * weights).wire()
+        np.testing.assert_array_equal(values.grad, weights.swapaxes(0, 2))
 
     def test_derived_ops_desugar(self):
         # `-`/`/` add no primitives: they are built from `+`, `*` and `**`.
