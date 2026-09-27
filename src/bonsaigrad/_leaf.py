@@ -194,6 +194,9 @@ class Leaf:
         out._backward = _backward
         return out
 
+    def softmax(self, axis: Optional[Union[int, Tuple[int, ...]]] = None, keepdims: bool = False) -> Leaf:
+        return (self - self.logsumexp(axis=axis, keepdims=keepdims)).exp()
+
     def __matmul__(self, other: Leaf | ArrayLike) -> Leaf:
         other: Leaf = self._wrap(other)
         if self.data.ndim < 2 or other.data.ndim < 2:

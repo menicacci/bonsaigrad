@@ -44,6 +44,12 @@ class TestLeaf(unittest.TestCase):
     def test_exp(self):
         self.assertAlmostEqual(float(Leaf(1.0).exp().data), np.e)
 
+    def test_softmax_stays_stable_and_sums_to_one(self):
+        probabilities = Leaf([1000.0, 1001.0, 1002.0]).softmax().data
+        expected = np.exp([-2.0, -1.0, 0.0])
+        expected /= expected.sum()
+        np.testing.assert_allclose(probabilities, expected)
+
     def test_reshape_rearranges_values_and_gradients(self):
         values = Leaf([[0.0, 1.0, 2.0], [3.0, 4.0, 5.0]])
         reshaped = values.reshape(3, 2)
