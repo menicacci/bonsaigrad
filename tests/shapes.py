@@ -7,6 +7,16 @@ from ._base import assert_grads
 
 
 class TestShapes(unittest.TestCase):
+    def test_concat_preserves_values_and_routes_gradients(self):
+        left = Leaf([[1.0], [2.0]])
+        right = Leaf([[3.0, 4.0], [5.0, 6.0]])
+        joined = Leaf.concat([left, right])
+
+        np.testing.assert_array_equal(joined.data, [[1.0, 3.0, 4.0], [2.0, 5.0, 6.0]])
+        (joined * [[2.0, 3.0, 5.0], [7.0, 11.0, 13.0]]).sum().wire()
+        np.testing.assert_array_equal(left.grad, [[2.0], [7.0]])
+        np.testing.assert_array_equal(right.grad, [[3.0, 5.0], [11.0, 13.0]])
+
     def test_unbroadcast_leaves_matching_shapes_alone(self):
         grad = np.ones((2, 3))
         self.assertIs(Leaf._unbroadcast(grad, (2, 3)), grad)

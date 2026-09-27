@@ -4,7 +4,7 @@ import numpy as np
 
 from bonsaigrad import Leaf
 from bonsaigrad.nn import Sequential
-from bonsaigrad.nn.attention import SelfAttention
+from bonsaigrad.nn.attention import SelfAttention, MultiHeadSelfAttention
 from bonsaigrad.optim import SGD
 
 
@@ -45,3 +45,27 @@ class TestSelfAttention(unittest.TestCase):
         for kwargs in ({"embedding_dim": 0}, {"embedding_dim": 4, "head_dim": 0}):
             with self.assertRaises(ValueError):
                 SelfAttention(**kwargs)
+
+
+class TestMultiHeadSelfAttention(unittest.TestCase):
+
+    def test_distinct_heads_combine_and_backpropagate(self):
+        attention = MultiHeadSelfAttention(2, embedding_dim=2, head_dim=1)
+        for index, head in enumerate(attention.heads):
+            for projection in (head.Q, head.K, head.V):
+                projection.weight.data[:] = 0
+                projection.bias.data[:] = 0
+            head.V.weight.data[index, 0] = 1.0
+        attention.linear.weight.data[:] = np.eye(2)
+        attention.linear.bias.data[:] = 0
+        inputs = Leaf([[2.0, 4.0], [6.0, 8.0]])
+
+        output = attention(inputs)
+
+        np.testing.assert_allclose(output.data, [[2.0, 4.0], [4.0, 6.0]])
+        output.sum().wire()
+        np.testing.assert_allclose(inputs.grad, [[1.5, 1.5], [0.5, 0.5]])
+        self.assertEqual(len(attention.parameters()), 14)
+        for head in attention.heads:
+            self.assertTrue(np.any(head.V.weight.grad != 0))
+        self.assertTrue(np.any(attention.linear.weight.grad != 0))

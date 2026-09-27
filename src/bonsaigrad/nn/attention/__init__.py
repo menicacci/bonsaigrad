@@ -1,3 +1,3 @@
-from ._self import SelfAttention
+from ._self import SelfAttention, MultiHeadSelfAttention
 
-__all__ = ["SelfAttention"]
+__all__ = ["SelfAttention", "MultiHeadSelfAttention"]
