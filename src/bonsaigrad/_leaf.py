@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, Tuple, List, Set, Optional, Union
+from typing import Any, Tuple, List, Set, Optional, Union, Sequence
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -264,3 +264,18 @@ class Leaf:
 
     def __repr__(self) -> str:
         return f"Leaf(data={self.data}, grad={self.grad})"
+
+    @classmethod
+    def concat(cls, leaves: Sequence[Leaf], axis: int = -1) -> Leaf:
+        leaves: Tuple[Leaf, ...] = tuple(leaves)
+        out = cls(np.concatenate([leaf.data for leaf in leaves], axis=axis), leaves, "concat")
+
+        boundaries = np.cumsum([leaf.data.shape[axis] for leaf in leaves])[:-1]
+
+        def _backward() -> None:
+            gradients = np.split(out.grad, boundaries, axis=axis)
+            for leaf, grad in zip(leaves, gradients):
+                leaf.grad += grad
+
+        out._backward = _backward
+        return out

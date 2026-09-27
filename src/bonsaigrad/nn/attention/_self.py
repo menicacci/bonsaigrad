@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -36,3 +36,23 @@ class SelfAttention(Module):
 
     def parameters(self) -> Tuple[Leaf, ...]:
         return self.Q.parameters() + self.K.parameters() + self.V.parameters()
+
+
+class MultiHeadSelfAttention(Module):
+
+    def __init__(self, num_head: int, embedding_dim: int, head_dim: Optional[int] = None, causal: bool = True):
+        super().__init__()
+        self.num_head: int = num_head
+        self.embedding_dim: int = embedding_dim
+        self.head_dim: int = head_dim if head_dim is not None else max(1, embedding_dim // 4)
+        self.causal: bool = causal
+
+        self.heads: List[SelfAttention] = [SelfAttention(embedding_dim, head_dim, causal) for _ in range(num_head)]
+        self.linear = Linear(num_head * self.head_dim, embedding_dim)
+
+    def forward(self, inputs: Leaf | ArrayLike) -> Leaf:
+        inputs = inputs if isinstance(inputs, Leaf) else Leaf(inputs)
+        return self.linear(Leaf.concat([h(inputs) for h in self.heads]))
+
+    def parameters(self) -> Tuple[Leaf, ...]:
+        return tuple(param for h in self.heads for param in h.parameters()) + self.linear.parameters()
